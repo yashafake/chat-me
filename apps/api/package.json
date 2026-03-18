@@ -1,0 +1,22 @@
+{
+  "name": "@chat-me/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup src/index.ts --format esm --platform node --out-dir dist --splitting false",
+    "start": "node dist/index.js",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts"
+  },
+  "dependencies": {
+    "@chat-me/shared": "*",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/static": "^8.3.0",
+    "fastify": "^5.6.0",
+    "nodemailer": "^7.0.6",
+    "pg": "^8.16.3"
+  }
+}

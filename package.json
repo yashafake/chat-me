@@ -1,0 +1,32 @@
+{
+  "name": "chat-me",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,admin,widget -c blue,magenta,green \"npm run dev:api\" \"npm run dev:admin\" \"npm run dev:widget\"",
+    "dev:api": "npm run dev -w @chat-me/api",
+    "dev:admin": "npm run dev -w @chat-me/admin",
+    "dev:widget": "npm run dev -w @chat-me/widget",
+    "build": "npm run build -w @chat-me/shared && npm run build -w @chat-me/sdk && npm run build -w @chat-me/widget && npm run build -w @chat-me/api && npm run build -w @chat-me/admin",
+    "migrate": "npm run migrate -w @chat-me/api",
+    "seed": "npm run seed -w @chat-me/api",
+    "check": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
+    "esbuild": "^0.25.10",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "tsup": "^8.5.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
