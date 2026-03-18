@@ -30,7 +30,7 @@ import {
   createOperatorReply,
   createOperatorSession,
   deleteOperatorSession,
-  findOperatorByEmail,
+  findOperatorByIdentifier,
   getConversationDetails,
   getConversationEnvelope,
   getConversationSummaryById,
@@ -139,10 +139,10 @@ export async function registerAdminRoutes(
     assert(isAllowedAdminOrigin(context.config, origin), 403, "Admin origin is not allowed");
 
     const payload = OperatorLoginInputSchema.parse(request.body ?? {});
-    const rateKey = `${payload.email}:${getClientIp(request) ?? "unknown"}`;
+    const rateKey = `${payload.identifier}:${getClientIp(request) ?? "unknown"}`;
     assert(context.loginLimiter.isAllowed(rateKey, 6, 10 * 60 * 1000), 429, "Too many login attempts");
 
-    const operator = await findOperatorByEmail(context.pool, payload.email);
+    const operator = await findOperatorByIdentifier(context.pool, payload.identifier);
     assert(operator && operator.is_active, 401, "Invalid credentials");
 
     const passwordOk = await verifyPassword(

@@ -626,15 +626,15 @@ export async function listAdminConversations(
   return result.rows.map(mapConversation);
 }
 
-export async function findOperatorByEmail(pool: Pool, email: string): Promise<any | null> {
+export async function findOperatorByIdentifier(pool: Pool, identifier: string): Promise<any | null> {
   const result = await pool.query(
     `
       SELECT *
       FROM chat_operators
-      WHERE email = $1
+      WHERE LOWER(email) = $1
       LIMIT 1
     `,
-    [email]
+    [identifier]
   );
 
   return result.rows[0] ?? null;

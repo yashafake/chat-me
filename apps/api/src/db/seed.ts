@@ -109,7 +109,10 @@ async function main() {
       );
     }
 
-    const operatorEmail = process.env.SEED_OPERATOR_EMAIL?.trim() || "operator@example.local";
+    const operatorEmail =
+      process.env.SEED_OPERATOR_LOGIN?.trim() ||
+      process.env.SEED_OPERATOR_EMAIL?.trim() ||
+      "operator@example.local";
     const operatorPassword = process.env.SEED_OPERATOR_PASSWORD?.trim() || "ChangeMe123!";
     const passwordHash = await hashPassword(operatorPassword, config.passwordPepper);
 
@@ -133,7 +136,7 @@ async function main() {
     );
 
     console.log("Seed complete.");
-    console.log(`Operator: ${operatorEmail}`);
+    console.log(`Operator login: ${operatorEmail}`);
     console.log(`Password: ${operatorPassword}`);
   } finally {
     await pool.end();

@@ -99,10 +99,20 @@ export const SendMessageInputSchema = z.object({
   metadata: z.record(z.string(), z.string().max(200)).default({})
 });
 
-export const OperatorLoginInputSchema = z.object({
-  email: z.email().trim().transform((value) => value.toLowerCase()),
-  password: z.string().min(8).max(200)
-});
+export const OperatorLoginInputSchema = z
+  .object({
+    identifier: z.string().trim().min(1).max(120).optional(),
+    email: z.string().trim().min(1).max(120).optional(),
+    password: z.string().min(8).max(200)
+  })
+  .transform(({ identifier, email, password }) => ({
+    identifier: (identifier || email || "").trim().toLowerCase(),
+    password
+  }))
+  .refine((value) => value.identifier.length >= 1, {
+    message: "Login is required",
+    path: ["identifier"]
+  });
 
 export const OperatorReplyInputSchema = z.object({
   body: z

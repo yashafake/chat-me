@@ -7,7 +7,7 @@ import { apiFetch, ApiError, setStoredCsrfToken } from "../lib/api";
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +23,7 @@ export function LoginForm() {
       }>("/v1/admin/auth/login", {
         method: "POST",
         body: JSON.stringify({
-          email,
+          identifier,
           password
         })
       });
@@ -43,14 +43,14 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-200">Email</label>
+        <label className="text-sm font-medium text-slate-200">Логин</label>
         <input
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@company.ru"
+          type="text"
+          value={identifier}
+          onChange={(event) => setIdentifier(event.target.value)}
+          placeholder="admin"
           className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none transition focus:border-aurora/60 focus:bg-white/10"
-          autoComplete="email"
+          autoComplete="username"
           required
         />
       </div>
