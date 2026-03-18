@@ -258,11 +258,18 @@ export async function registerPublicRoutes(
       conversationId
     });
     assert(access, 404, "Conversation not found");
+    const requestOrigin = getRequestOrigin(request);
 
     reply.raw.writeHead(200, {
       "content-type": "text/event-stream",
       "cache-control": "no-cache, no-transform",
-      connection: "keep-alive"
+      connection: "keep-alive",
+      ...(requestOrigin
+        ? {
+            "access-control-allow-origin": requestOrigin,
+            vary: "origin"
+          }
+        : {})
     });
     reply.raw.write(": connected\n\n");
 

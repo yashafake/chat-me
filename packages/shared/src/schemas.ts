@@ -135,6 +135,19 @@ export const SafeNotificationDispatchSchema = z.object({
   projectKey: z.string().trim().min(2).max(64)
 });
 
+export const WebPushSubscriptionInputSchema = z.object({
+  endpoint: z.string().trim().url(),
+  keys: z.object({
+    p256dh: z.string().trim().min(16).max(512),
+    auth: z.string().trim().min(8).max(512)
+  }),
+  deviceLabel: safeOptionalText(120)
+});
+
+export const WebPushSubscriptionRevokeInputSchema = z.object({
+  endpoint: z.string().trim().url()
+});
+
 export const WidgetSdkConfigSchema = z.object({
   projectKey: z.string().trim().min(2).max(64),
   apiBaseUrl: z.string().trim().url(),

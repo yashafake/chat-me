@@ -6,6 +6,7 @@ import type {
   ConversationDetails,
   ConversationStatus,
   ConversationSummary,
+  OperatorPushSubscriptionSummary,
   OperatorSessionUser,
   PublicProjectConfig
 } from "@chat-me/shared";
@@ -54,6 +55,17 @@ function mapNote(row: any): ChatInternalNote {
     body: row.body,
     createdAt: row.created_at.toISOString(),
     operatorName: row.operator_name ?? null
+  };
+}
+
+function mapPushSubscription(row: any): OperatorPushSubscriptionSummary {
+  return {
+    id: row.id,
+    endpoint: row.endpoint,
+    deviceLabel: row.device_label ?? null,
+    createdAt: row.created_at.toISOString(),
+    lastSeenAt: row.last_seen_at.toISOString(),
+    lastNotifiedAt: row.last_notified_at?.toISOString() ?? null
   };
 }
 
@@ -768,6 +780,149 @@ export async function deleteOperatorSession(pool: Pool, sessionTokenHash: string
   );
 }
 
+export async function listOperatorPushSubscriptions(
+  pool: Pool,
+  operatorId: number
+): Promise<OperatorPushSubscriptionSummary[]> {
+  const result = await pool.query(
+    `
+      SELECT *
+      FROM chat_operator_push_subscriptions
+      WHERE operator_id = $1
+        AND revoked_at IS NULL
+      ORDER BY last_seen_at DESC, id DESC
+    `,
+    [operatorId]
+  );
+
+  return result.rows.map(mapPushSubscription);
+}
+
+export async function listActivePushSubscriptions(
+  pool: Pool
+): Promise<
+  Array<{
+    id: number;
+    endpoint: string;
+    p256dhKey: string;
+    authKey: string;
+  }>
+> {
+  const result = await pool.query(
+    `
+      SELECT s.id, s.endpoint, s.p256dh_key, s.auth_key
+      FROM chat_operator_push_subscriptions s
+      JOIN chat_operators o ON o.id = s.operator_id
+      WHERE s.revoked_at IS NULL
+        AND o.is_active = TRUE
+      ORDER BY s.id ASC
+    `
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    endpoint: row.endpoint,
+    p256dhKey: row.p256dh_key,
+    authKey: row.auth_key
+  }));
+}
+
+export async function upsertOperatorPushSubscription(
+  pool: Pool,
+  input: {
+    operatorId: number;
+    endpoint: string;
+    p256dhKey: string;
+    authKey: string;
+    deviceLabel?: string;
+    userAgent?: string | null;
+  }
+): Promise<void> {
+  await pool.query(
+    `
+      INSERT INTO chat_operator_push_subscriptions (
+        operator_id,
+        endpoint,
+        p256dh_key,
+        auth_key,
+        device_label,
+        user_agent
+      )
+      VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (endpoint)
+      DO UPDATE SET
+        operator_id = EXCLUDED.operator_id,
+        p256dh_key = EXCLUDED.p256dh_key,
+        auth_key = EXCLUDED.auth_key,
+        device_label = EXCLUDED.device_label,
+        user_agent = EXCLUDED.user_agent,
+        last_seen_at = NOW(),
+        revoked_at = NULL
+    `,
+    [
+      input.operatorId,
+      input.endpoint,
+      input.p256dhKey,
+      input.authKey,
+      input.deviceLabel ?? null,
+      input.userAgent ?? null
+    ]
+  );
+}
+
+export async function revokeOperatorPushSubscription(
+  pool: Pool,
+  input: {
+    operatorId: number;
+    endpoint: string;
+  }
+): Promise<void> {
+  await pool.query(
+    `
+      UPDATE chat_operator_push_subscriptions
+      SET revoked_at = NOW(),
+          last_seen_at = NOW()
+      WHERE operator_id = $1
+        AND endpoint = $2
+        AND revoked_at IS NULL
+    `,
+    [input.operatorId, input.endpoint]
+  );
+}
+
+export async function revokeOperatorPushSubscriptionById(
+  pool: Pool,
+  subscriptionId: number
+): Promise<void> {
+  await pool.query(
+    `
+      UPDATE chat_operator_push_subscriptions
+      SET revoked_at = NOW()
+      WHERE id = $1
+        AND revoked_at IS NULL
+    `,
+    [subscriptionId]
+  );
+}
+
+export async function touchPushSubscriptionNotification(
+  pool: Pool,
+  subscriptionIds: number[]
+): Promise<void> {
+  if (subscriptionIds.length === 0) {
+    return;
+  }
+
+  await pool.query(
+    `
+      UPDATE chat_operator_push_subscriptions
+      SET last_notified_at = NOW()
+      WHERE id = ANY($1::bigint[])
+    `,
+    [subscriptionIds]
+  );
+}
+
 export async function insertAuditLog(
   pool: Pool,
   input: {
@@ -803,7 +958,7 @@ export async function insertNotification(
   pool: Pool,
   input: {
     conversationId: number;
-    channel: "email" | "telegram";
+    channel: "email" | "telegram" | "web_push";
     payloadSafe: Record<string, unknown>;
   },
   clientArg?: Pool | PoolClient

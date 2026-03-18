@@ -10,6 +10,8 @@ import type {
   PublicProjectConfigSchema,
   SafeNotificationDispatchSchema,
   SendMessageInputSchema,
+  WebPushSubscriptionInputSchema,
+  WebPushSubscriptionRevokeInputSchema,
   WidgetSdkConfigSchema,
   WidgetSessionInitInputSchema
 } from "./schemas";
@@ -24,6 +26,8 @@ export type InternalNoteInput = z.infer<typeof InternalNoteInputSchema>;
 export type ConversationStatus = z.infer<typeof ConversationStatusSchema>;
 export type AdminConversationListQuery = z.infer<typeof AdminConversationListQuerySchema>;
 export type SafeNotificationDispatchInput = z.infer<typeof SafeNotificationDispatchSchema>;
+export type WebPushSubscriptionInput = z.infer<typeof WebPushSubscriptionInputSchema>;
+export type WebPushSubscriptionRevokeInput = z.infer<typeof WebPushSubscriptionRevokeInputSchema>;
 export type WidgetSdkConfig = z.infer<typeof WidgetSdkConfigSchema>;
 
 export interface ChatMessage {
@@ -75,6 +79,15 @@ export interface OperatorSessionUser {
   email: string;
   displayName: string;
   role: "operator" | "manager" | "admin";
+}
+
+export interface OperatorPushSubscriptionSummary {
+  id: number;
+  endpoint: string;
+  deviceLabel: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+  lastNotifiedAt: string | null;
 }
 
 export interface WidgetBootstrapPayload {

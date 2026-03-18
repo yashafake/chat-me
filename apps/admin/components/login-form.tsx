@@ -7,8 +7,8 @@ import { apiFetch, ApiError, setStoredCsrfToken } from "../lib/api";
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("operator@example.local");
-  const [password, setPassword] = useState("ChangeMe123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -48,6 +48,7 @@ export function LoginForm() {
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
+          placeholder="you@company.ru"
           className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none transition focus:border-aurora/60 focus:bg-white/10"
           autoComplete="email"
           required
@@ -59,6 +60,7 @@ export function LoginForm() {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          placeholder="Введите пароль"
           className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none transition focus:border-aurora/60 focus:bg-white/10"
           autoComplete="current-password"
           required
@@ -76,6 +78,9 @@ export function LoginForm() {
       >
         {submitting ? "Входим..." : "Войти в операторскую админку"}
       </button>
+      <div className="text-xs leading-5 text-slate-500">
+        После входа сессия сохраняется в secure cookie. Для iPhone сначала установи админку как PWA, затем включи push внутри консоли.
+      </div>
     </form>
   );
 }

@@ -33,6 +33,8 @@ EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
 
+ALTER TYPE chat_notification_channel ADD VALUE IF NOT EXISTS 'web_push';
+
 DO $$
 BEGIN
   CREATE TYPE chat_notification_status AS ENUM ('pending', 'sent', 'failed');
@@ -98,6 +100,21 @@ CREATE TABLE IF NOT EXISTS chat_operator_sessions (
   last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   ip INET,
   user_agent TEXT
+);
+
+CREATE TABLE IF NOT EXISTS chat_operator_push_subscriptions (
+  id BIGSERIAL PRIMARY KEY,
+  operator_id BIGINT NOT NULL REFERENCES chat_operators(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL UNIQUE,
+  p256dh_key TEXT NOT NULL,
+  auth_key TEXT NOT NULL,
+  device_label TEXT,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_notified_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS chat_conversations (
@@ -176,6 +193,12 @@ BEFORE UPDATE ON chat_operators
 FOR EACH ROW
 EXECUTE FUNCTION chat_set_updated_at();
 
+DROP TRIGGER IF EXISTS chat_operator_push_subscriptions_set_updated_at ON chat_operator_push_subscriptions;
+CREATE TRIGGER chat_operator_push_subscriptions_set_updated_at
+BEFORE UPDATE ON chat_operator_push_subscriptions
+FOR EACH ROW
+EXECUTE FUNCTION chat_set_updated_at();
+
 DROP TRIGGER IF EXISTS chat_conversations_set_updated_at ON chat_conversations;
 CREATE TRIGGER chat_conversations_set_updated_at
 BEFORE UPDATE ON chat_conversations
@@ -197,6 +220,14 @@ ON chat_operator_sessions(operator_id, expires_at DESC);
 
 CREATE INDEX IF NOT EXISTS chat_operator_sessions_expires_idx
 ON chat_operator_sessions(expires_at);
+
+CREATE INDEX IF NOT EXISTS chat_operator_push_subscriptions_operator_idx
+ON chat_operator_push_subscriptions(operator_id, last_seen_at DESC)
+WHERE revoked_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS chat_operator_push_subscriptions_last_notified_idx
+ON chat_operator_push_subscriptions(last_notified_at DESC)
+WHERE revoked_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS chat_conversations_project_status_last_message_idx
 ON chat_conversations(project_id, status, last_message_at DESC);

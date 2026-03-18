@@ -1,0 +1,18 @@
+{
+  "name": "chat-me operator console",
+  "short_name": "chat-me",
+  "description": "Self-hosted operator console for chat-me.",
+  "start_url": "/admin/chat",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#08101a",
+  "theme_color": "#08101a",
+  "icons": [
+    {
+      "src": "/admin/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -2,8 +2,19 @@
 
 const CSRF_STORAGE_KEY = "chat-me-admin-csrf";
 
-export const apiBaseUrl =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:4100";
+export function getApiBaseUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+
+  if (configured) {
+    return configured;
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  return "http://localhost:4100";
+}
 
 export class ApiError extends Error {
   statusCode: number;
@@ -59,7 +70,7 @@ export async function apiFetch<T>(
     }
   }
 
-  const response = await fetch(`${apiBaseUrl}${pathname}`, {
+  const response = await fetch(`${getApiBaseUrl()}${pathname}`, {
     ...init,
     headers,
     credentials: "include"

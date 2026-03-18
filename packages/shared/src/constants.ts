@@ -2,7 +2,7 @@ export const projectStatusValues = ["active", "paused", "archived"] as const;
 export const conversationStatusValues = ["open", "closed", "spam"] as const;
 export const senderTypeValues = ["visitor", "operator", "system"] as const;
 export const operatorRoleValues = ["operator", "manager", "admin"] as const;
-export const notificationChannelValues = ["email", "telegram"] as const;
+export const notificationChannelValues = ["email", "telegram", "web_push"] as const;
 export const notificationStatusValues = ["pending", "sent", "failed"] as const;
 
 export const localeValues = ["ru", "en"] as const;

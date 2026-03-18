@@ -75,6 +75,12 @@ export interface AppConfig {
     botToken?: string;
     chatId?: string;
   };
+  webPush: {
+    enabled: boolean;
+    publicKey?: string;
+    privateKey?: string;
+    subject?: string;
+  };
   widgetDistDir: string;
   sseHeartbeatMs: number;
 }
@@ -115,6 +121,16 @@ export function loadConfig(): AppConfig {
       botToken: process.env.TELEGRAM_BOT_TOKEN?.trim() || undefined,
       chatId: process.env.TELEGRAM_CHAT_ID?.trim() || undefined
     },
+    webPush: {
+      enabled: Boolean(
+        process.env.WEB_PUSH_VAPID_PUBLIC_KEY?.trim() &&
+          process.env.WEB_PUSH_VAPID_PRIVATE_KEY?.trim() &&
+          process.env.WEB_PUSH_SUBJECT?.trim()
+      ),
+      publicKey: process.env.WEB_PUSH_VAPID_PUBLIC_KEY?.trim() || undefined,
+      privateKey: process.env.WEB_PUSH_VAPID_PRIVATE_KEY?.trim() || undefined,
+      subject: process.env.WEB_PUSH_SUBJECT?.trim() || undefined
+    },
     widgetDistDir: path.resolve(process.cwd(), "../widget/dist"),
     sseHeartbeatMs: readNumber("SSE_HEARTBEAT_MS", 20_000)
   };
@@ -122,7 +138,8 @@ export function loadConfig(): AppConfig {
 
 export function buildAdminConversationUrl(config: AppConfig, conversationId: number): string {
   const base = new URL(config.adminPublicUrl);
-  base.pathname = `/chat/${conversationId}`;
+  const adminPath = base.pathname.replace(/\/$/, "");
+  base.pathname = `${adminPath}/chat/${conversationId}`.replace(/\/{2,}/g, "/");
   return base.toString();
 }
 
