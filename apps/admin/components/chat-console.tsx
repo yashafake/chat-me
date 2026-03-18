@@ -400,9 +400,7 @@ export function ChatConsole(props: {
     [sortedConversations]
   );
 
-  async function handleReplySubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  async function sendReply() {
     if (!selectedConversationId || !replyBody.trim()) {
       return;
     }
@@ -430,6 +428,11 @@ export function ChatConsole(props: {
     } finally {
       setSavingReply(false);
     }
+  }
+
+  async function handleReplySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await sendReply();
   }
 
   async function handleNoteSubmit(event: FormEvent<HTMLFormElement>) {
@@ -506,7 +509,7 @@ export function ChatConsole(props: {
   function handleReplyKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
-      void handleReplySubmit(event as unknown as FormEvent<HTMLFormElement>);
+      void sendReply();
     }
   }
 
@@ -678,7 +681,10 @@ export function ChatConsole(props: {
   );
 
   const detailThread = conversation ? (
-    <div className={`${mobilePane === "chat" ? "flex" : "hidden"} min-h-0 flex-col xl:flex`}>
+    <div
+      className="chatme-detail-thread min-h-0 flex-col"
+      style={{ display: mobilePane === "chat" ? "flex" : "none" }}
+    >
       <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
         <div className="mx-auto flex max-w-3xl flex-col gap-4">
           {conversation.messages.length === 0 ? (
@@ -767,9 +773,8 @@ export function ChatConsole(props: {
 
   const detailSidebar = conversation ? (
     <div
-      className={`${
-        mobilePane === "context" ? "flex" : "hidden"
-      } min-h-0 flex-col border-t border-white/10 px-4 py-5 sm:px-6 xl:flex xl:border-l xl:border-t-0`}
+      className="chatme-detail-sidebar min-h-0 flex-col border-t border-white/10 px-4 py-5 sm:px-6 xl:border-l xl:border-t-0"
+      style={{ display: mobilePane === "context" ? "flex" : "none" }}
     >
       <div className="space-y-4">
         <div className="rounded-[26px] border border-white/10 bg-white/[0.04] p-4">
@@ -870,7 +875,7 @@ export function ChatConsole(props: {
                 <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-500">
                   <Link
                     href="/chat"
-                    className="rounded-full border border-white/10 px-3 py-1 text-slate-300 transition hover:border-white/20 hover:bg-white/[0.06] lg:hidden"
+                    className="chatme-mobile-only-inline rounded-full border border-white/10 px-3 py-1 text-slate-300 transition hover:border-white/20 hover:bg-white/[0.06]"
                   >
                     К очереди
                   </Link>
@@ -932,7 +937,7 @@ export function ChatConsole(props: {
               />
             </div>
 
-            <div className="mt-5 flex rounded-[18px] border border-white/10 bg-white/[0.04] p-1 xl:hidden">
+            <div className="chatme-mobile-tabs mt-5 flex rounded-[18px] border border-white/10 bg-white/[0.04] p-1">
               <button
                 type="button"
                 onClick={() => setMobilePane("chat")}
@@ -981,7 +986,7 @@ export function ChatConsole(props: {
       )}
     </section>
   ) : (
-    <section className="hidden min-h-[78vh] flex-col rounded-[32px] border border-white/10 bg-slate-950/55 shadow-glass backdrop-blur lg:flex">
+    <section className="chatme-desktop-only-flex min-h-[78vh] flex-col rounded-[32px] border border-white/10 bg-slate-950/55 shadow-glass backdrop-blur">
       <div className="px-6 py-6">
         <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Workspace Overview</div>
         <h2 className="mt-3 text-3xl font-semibold text-white">Выбери диалог слева</h2>
@@ -1041,7 +1046,7 @@ export function ChatConsole(props: {
 
   return (
     <div className="grid min-h-[82vh] gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
-      <div className={selectedConversationId ? "hidden lg:block" : "block"}>{queueSidebar}</div>
+      <div className={selectedConversationId ? "chatme-queue-shell-mobile-hidden" : ""}>{queueSidebar}</div>
       {detailPanel}
     </div>
   );

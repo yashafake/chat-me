@@ -1,3 +1,5 @@
+@config "../tailwind.config.ts";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -43,4 +45,56 @@ a {
 
 ::selection {
   background: rgba(45, 212, 191, 0.32);
+}
+
+.chatme-desktop-only-block,
+.chatme-desktop-only-flex,
+.chatme-mobile-only-inline,
+.chatme-mobile-tabs,
+.chatme-queue-shell-mobile-hidden {
+  display: none;
+}
+
+.chatme-detail-thread,
+.chatme-detail-sidebar {
+  min-height: 0;
+}
+
+@media (min-width: 1024px) {
+  .chatme-desktop-only-block {
+    display: block !important;
+  }
+
+  .chatme-desktop-only-flex {
+    display: flex !important;
+  }
+
+  .chatme-queue-shell-mobile-hidden {
+    display: block !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .chatme-mobile-only-inline {
+    display: inline-flex !important;
+  }
+
+  .chatme-mobile-tabs {
+    display: flex !important;
+  }
+
+  .chatme-queue-shell-mobile-hidden {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .chatme-mobile-tabs {
+    display: none !important;
+  }
+
+  .chatme-detail-thread,
+  .chatme-detail-sidebar {
+    display: flex !important;
+  }
 }

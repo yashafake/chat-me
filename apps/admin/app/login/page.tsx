@@ -3,7 +3,7 @@ import { LoginForm } from "../../components/login-form";
 export default function LoginPage() {
   return (
     <div className="grid min-h-[82vh] items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-      <section className="hidden pr-10 lg:block">
+      <section className="chatme-desktop-only-block pr-10">
         <div className="max-w-2xl">
           <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-slate-300">
             Operator workspace

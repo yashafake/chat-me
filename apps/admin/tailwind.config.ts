@@ -1,16 +1,11 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import type { Config } from "tailwindcss";
-
-const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 const config: Config = {
   content: [
-    path.join(rootDir, "apps/admin/app/**/*.{ts,tsx}"),
-    path.join(rootDir, "apps/admin/components/**/*.{ts,tsx}"),
-    path.join(rootDir, "apps/admin/lib/**/*.{ts,tsx}"),
-    path.join(rootDir, "apps/admin/public/**/*.{html,js}")
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+    "./public/**/*.{html,js}"
   ],
   theme: {
     extend: {
