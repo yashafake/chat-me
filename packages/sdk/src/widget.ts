@@ -89,6 +89,24 @@ function resolveTarget(target: string | HTMLElement | undefined): HTMLElement {
   return target;
 }
 
+function mergeMessages<T extends { id: number }>(current: T[], incoming: T[]): T[] {
+  if (!incoming.length) {
+    return current;
+  }
+
+  const merged = new Map<number, T>();
+
+  for (const message of current) {
+    merged.set(message.id, message);
+  }
+
+  for (const message of incoming) {
+    merged.set(message.id, message);
+  }
+
+  return Array.from(merged.values()).sort((left, right) => left.id - right.id);
+}
+
 function getStrings(locale: "ru" | "en"): LocaleStrings {
   return defaultWidgetStrings[locale];
 }
@@ -394,7 +412,7 @@ export function mountChatWidget(
     });
 
     if (payload.messages.length) {
-      state.messages = [...state.messages, ...payload.messages];
+      state.messages = mergeMessages(state.messages, payload.messages);
       render();
       scrollMessagesToBottom();
     }
@@ -467,7 +485,7 @@ export function mountChatWidget(
         visitorToken: state.visitorToken
       });
       state.conversationId = conversation.conversationId;
-      state.messages = conversation.messages;
+      state.messages = mergeMessages([], conversation.messages);
       state.bootstrapped = true;
       connectStream();
     } catch (error) {
@@ -508,7 +526,7 @@ export function mountChatWidget(
         conversationId: state.conversationId,
         body
       });
-      state.messages = [...state.messages, payload.message];
+      state.messages = mergeMessages(state.messages, [payload.message]);
       state.draft = "";
       render();
       scrollMessagesToBottom();
