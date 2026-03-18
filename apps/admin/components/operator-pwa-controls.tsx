@@ -297,12 +297,12 @@ export function OperatorPwaControls() {
     <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
       <div className="text-xs uppercase tracking-[0.22em] text-slate-400">PWA / Push</div>
       <div className="mt-3 text-sm font-medium text-white">
-        {standalone ? "Админка открыта как приложение" : "Для push установите админку как приложение"}
+        {standalone ? "Админка открыта как приложение" : "Установите админку как приложение"}
       </div>
       <p className="mt-2 text-sm leading-6 text-slate-300">
         {isIosDevice() && !standalone
-          ? "На iPhone: Safari -> Поделиться -> На экран Домой. После запуска из иконки включите push."
-          : "Push содержит только safe alert без текста сообщения и без персональных данных."}
+          ? "На iPhone: Safari -> Поделиться -> На экран Домой. Потом откройте иконку и включите push."
+          : "Push приходит только как safe alert: без текста сообщения и без персональных данных."}
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -342,7 +342,7 @@ export function OperatorPwaControls() {
       <dl className="mt-4 grid gap-2 text-xs text-slate-400">
         <div className="flex items-center justify-between gap-3">
           <dt>Статус сервера</dt>
-          <dd className="text-slate-200">{enabled ? "web push включен" : "web push не настроен"}</dd>
+          <dd className="text-slate-200">{enabled ? "push включен" : "push не настроен"}</dd>
         </div>
         <div className="flex items-center justify-between gap-3">
           <dt>Разрешение браузера</dt>

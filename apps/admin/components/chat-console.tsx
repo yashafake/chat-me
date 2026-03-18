@@ -530,12 +530,10 @@ export function ChatConsole(props: {
       <div className="border-b border-white/10 px-5 py-5 sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-[11px] uppercase tracking-[0.28em] text-slate-500">
-              Operator Workspace
-            </div>
+            <div className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Операторская</div>
             <h1 className="mt-3 text-2xl font-semibold text-white">Очередь чатов</h1>
             <p className="mt-2 max-w-md text-sm leading-6 text-slate-300">
-              Сначала бери карточки с меткой «Ждет ответа», затем открывай диалог и отвечай из нижнего блока.
+              Сначала открывай диалоги с меткой «Ждет ответа». Ответ уходит из нижней панели чата.
             </p>
           </div>
           <button
@@ -567,7 +565,7 @@ export function ChatConsole(props: {
           <OperatorPwaControls />
 
           <div className="rounded-[26px] border border-white/10 bg-white/[0.04] p-4">
-            <div className="text-[11px] uppercase tracking-[0.22em] text-slate-500">Фильтры</div>
+          <div className="text-[11px] uppercase tracking-[0.22em] text-slate-500">Фильтры очереди</div>
             <div className="mt-4 grid gap-3">
               <label className="grid gap-2">
                 <span className="text-sm font-medium text-slate-200">Проект</span>
@@ -988,41 +986,35 @@ export function ChatConsole(props: {
   ) : (
     <section className="chatme-desktop-only-flex min-h-[78vh] flex-col rounded-[32px] border border-white/10 bg-slate-950/55 shadow-glass backdrop-blur">
       <div className="px-6 py-6">
-        <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Workspace Overview</div>
-        <h2 className="mt-3 text-3xl font-semibold text-white">Выбери диалог слева</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-          Открой любую карточку из очереди: справа появятся переписка, данные посетителя, страница источника и внутренние заметки.
-        </p>
+            <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Рабочая область</div>
+            <h2 className="mt-3 text-3xl font-semibold text-white">Выбери диалог слева</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
+          Открой карточку из очереди: справа появятся переписка, контекст посетителя и внутренние заметки.
+            </p>
       </div>
 
       <div className="grid flex-1 gap-5 px-6 pb-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[30px] border border-white/10 bg-white/[0.04] p-6">
-          <div className="text-sm font-medium text-white">Как работать с очередью</div>
+              <div className="text-sm font-medium text-white">Как работать</div>
           <div className="mt-5 grid gap-4">
             <div className="rounded-[22px] border border-amber-300/20 bg-amber-300/10 px-4 py-4">
               <div className="text-sm font-semibold text-amber-100">1. Смотри на «Ждет ответа»</div>
-              <div className="mt-2 text-sm leading-6 text-amber-50/90">
-                Это диалоги, где последнее сообщение написал посетитель и оператор еще не ответил.
-              </div>
+                <div className="mt-2 text-sm leading-6 text-amber-50/90">Это приоритетные диалоги, где посетитель ждет ответ.</div>
             </div>
             <div className="rounded-[22px] border border-white/10 bg-slate-950/45 px-4 py-4">
               <div className="text-sm font-semibold text-white">2. Открой карточку диалога</div>
-              <div className="mt-2 text-sm leading-6 text-slate-300">
-                В верхней части будет краткий контекст, ниже переписка, справа - заметки и данные о посетителе.
-              </div>
+                <div className="mt-2 text-sm leading-6 text-slate-300">В шапке будет статус и действия, ниже переписка, справа контекст и заметки.</div>
             </div>
             <div className="rounded-[22px] border border-white/10 bg-slate-950/45 px-4 py-4">
               <div className="text-sm font-semibold text-white">3. Отвечай из нижнего блока</div>
-              <div className="mt-2 text-sm leading-6 text-slate-300">
-                Ответ уйдет в сайт-виджет. Если разговор завершен, закрой диалог кнопкой в шапке.
-              </div>
+                <div className="mt-2 text-sm leading-6 text-slate-300">Ответ уйдет в виджет на сайте. Когда разговор завершен, закрой диалог в шапке.</div>
             </div>
           </div>
         </div>
 
         <div className="space-y-5">
           <div className="rounded-[30px] border border-white/10 bg-white/[0.04] p-6">
-            <div className="text-sm font-medium text-white">Что видно в списке</div>
+              <div className="text-sm font-medium text-white">Что видно в списке</div>
             <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
               <div>Проект: с какого сайта пришел диалог.</div>
               <div>Статус: открыт, закрыт или спам.</div>

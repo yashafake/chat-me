@@ -6,17 +6,17 @@ export default function LoginPage() {
       <section className="chatme-desktop-only-block pr-10">
         <div className="max-w-2xl">
           <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-slate-300">
-            Operator workspace
+            Операторская
           </div>
           <h1 className="mt-6 text-5xl font-semibold leading-tight text-white">
             chat-me
             <span className="mt-3 block text-2xl font-medium leading-10 text-slate-200">
-              понятная операторская консоль для локального чата
+              операторская консоль для локального чата
             </span>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
-            Очередь обращений, переписка, контекст посетителя, внутренние заметки и PWA-уведомления
-            в одном интерфейсе без вывода данных во внешний SaaS.
+            Очередь обращений, переписка, контекст посетителя и PWA-уведомления в одном
+            интерфейсе без внешнего SaaS.
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -24,21 +24,21 @@ export default function LoginPage() {
               <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Очередь</div>
               <div className="mt-3 text-lg font-semibold text-white">Что требует ответа</div>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                В списке сразу видно проект, статус, последнее сообщение и приоритет обработки.
+                Видно проект, статус, последнее сообщение и приоритет обработки.
               </p>
             </div>
             <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
               <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Контекст</div>
               <div className="mt-3 text-lg font-semibold text-white">Источник и заметки</div>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                История, страница входа, контакты и внутренние договоренности лежат рядом с чатом.
+                История, страница входа, контакты и внутренние заметки лежат рядом с чатом.
               </p>
             </div>
             <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
               <div className="text-xs uppercase tracking-[0.18em] text-slate-500">PWA</div>
               <div className="mt-3 text-lg font-semibold text-white">Работа с телефона</div>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Установи админку на iPhone как приложение и включи safe push прямо после входа.
+                Установи админку на iPhone как приложение и включи safe push после входа.
               </p>
             </div>
           </div>
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
       <section className="mx-auto w-full max-w-md rounded-[34px] border border-white/10 bg-white/5 p-7 shadow-glass backdrop-blur lg:mx-0">
         <div className="mb-8">
-          <div className="text-xs uppercase tracking-[0.26em] text-slate-400">Operator Login</div>
+          <div className="text-xs uppercase tracking-[0.26em] text-slate-400">Вход оператора</div>
           <h2 className="mt-3 text-3xl font-semibold text-white">Вход в консоль</h2>
           <p className="mt-3 text-sm leading-6 text-slate-300">
             Secure cookie session, локальная база и безопасные служебные уведомления без передачи ПДн наружу.
