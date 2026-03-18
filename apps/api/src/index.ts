@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 import path from "node:path";
 
 import cookie from "@fastify/cookie";

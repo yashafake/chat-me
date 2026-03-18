@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 import { hashPassword } from "../security.js";
 import { loadConfig } from "../config.js";
 import { createPool, runSchema } from "./pool.js";
@@ -11,15 +9,22 @@ async function main() {
   try {
     await runSchema(pool);
 
-    const allowedOrigins = (process.env.SEED_PROJECT_ORIGINS || "http://localhost:3000,http://localhost:3001")
+    const parseOrigins = (value: string | undefined, fallback: string[]) =>
+      (value || fallback.join(","))
       .split(",")
       .map((entry) => entry.trim().toLowerCase())
       .filter(Boolean);
+
+    const defaultOrigins = parseOrigins(
+      process.env.SEED_PROJECT_ORIGINS,
+      ["http://localhost:3000", "http://localhost:3001"]
+    );
 
     const projects = [
       {
         key: "etern8-main",
         displayName: "Etern8 Main",
+        allowedOrigins: parseOrigins(process.env.SEED_ETERN8_MAIN_ORIGINS, defaultOrigins),
         widgetConfig: {
           locale: "ru",
           initialGreeting: "Здравствуйте. Подскажите, с чем помочь?",
@@ -38,6 +43,7 @@ async function main() {
       {
         key: "etern8-store",
         displayName: "Etern8 Store",
+        allowedOrigins: parseOrigins(process.env.SEED_ETERN8_STORE_ORIGINS, defaultOrigins),
         widgetConfig: {
           locale: "ru",
           initialGreeting: "Поможем с заказом, доставкой или подбором товара.",
@@ -56,6 +62,7 @@ async function main() {
       {
         key: "insales-store",
         displayName: "InSales Store",
+        allowedOrigins: parseOrigins(process.env.SEED_INSALES_STORE_ORIGINS, defaultOrigins),
         widgetConfig: {
           locale: "ru",
           initialGreeting: "Здравствуйте. Ответим по ассортименту и заказам.",
@@ -95,7 +102,7 @@ async function main() {
         [
           project.key,
           project.displayName,
-          allowedOrigins,
+          project.allowedOrigins,
           JSON.stringify(project.themeConfig),
           JSON.stringify(project.widgetConfig)
         ]
