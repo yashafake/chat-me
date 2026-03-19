@@ -15,6 +15,11 @@ async function main() {
       .map((entry) => entry.trim().toLowerCase())
       .filter(Boolean);
 
+    const parseStatus = (value: string | undefined, fallback: "active" | "paused" = "active") => {
+      const normalized = value?.trim().toLowerCase();
+      return normalized === "paused" ? "paused" : fallback;
+    };
+
     const defaultOrigins = parseOrigins(
       process.env.SEED_PROJECT_ORIGINS,
       ["http://localhost:3000", "http://localhost:3001"]
@@ -24,6 +29,7 @@ async function main() {
       {
         key: "etern8-main",
         displayName: "Etern8 Main",
+        status: parseStatus(process.env.SEED_ETERN8_MAIN_STATUS),
         allowedOrigins: parseOrigins(process.env.SEED_ETERN8_MAIN_ORIGINS, defaultOrigins),
         widgetConfig: {
           locale: "ru",
@@ -43,6 +49,7 @@ async function main() {
       {
         key: "etern8-store",
         displayName: "Etern8 Store",
+        status: parseStatus(process.env.SEED_ETERN8_STORE_STATUS),
         allowedOrigins: parseOrigins(process.env.SEED_ETERN8_STORE_ORIGINS, defaultOrigins),
         widgetConfig: {
           locale: "ru",
@@ -62,6 +69,7 @@ async function main() {
       {
         key: "dh22-store",
         displayName: "DH22 Store",
+        status: parseStatus(process.env.SEED_DH22_STATUS),
         allowedOrigins: parseOrigins(
           process.env.SEED_DH22_ORIGINS,
           ["https://dh22.ru", "https://www.dh22.ru", "http://localhost:3000", "http://127.0.0.1:3000"]
@@ -84,20 +92,24 @@ async function main() {
       {
         key: "insales-store",
         displayName: "InSales Store",
-        allowedOrigins: parseOrigins(process.env.SEED_INSALES_STORE_ORIGINS, defaultOrigins),
+        status: parseStatus(process.env.SEED_INSALES_STORE_STATUS),
+        allowedOrigins: parseOrigins(
+          process.env.SEED_INSALES_STORE_ORIGINS,
+          ["https://iwantconcept.store", "https://www.iwantconcept.store", "http://localhost:3000", "http://127.0.0.1:3000"]
+        ),
         widgetConfig: {
           locale: "ru",
-          initialGreeting: "Здравствуйте. Ответим по ассортименту и заказам.",
-          privacyUrl: "https://example.com/privacy",
+          initialGreeting: "Здравствуйте. Напишите вопрос по ассортименту, размерам, доставке или заказу.",
+          privacyUrl: "https://iwantconcept.store/page/politika_konfidentsialnosti",
           collectName: true,
-          collectEmail: false,
+          collectEmail: true,
           collectPhone: true
         },
         themeConfig: {
-          accentColor: "#d8b774",
-          position: "bottom-left",
-          borderRadius: 22,
-          buttonLabel: "Связаться"
+          accentColor: "#111111",
+          position: "bottom-right",
+          borderRadius: 24,
+          buttonLabel: "Чат"
         }
       }
     ];
@@ -113,11 +125,12 @@ async function main() {
             theme_config,
             widget_config
           )
-          VALUES ($1, $2, $3, 'active', $4::jsonb, $5::jsonb)
+          VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
           ON CONFLICT (key)
           DO UPDATE SET
             display_name = EXCLUDED.display_name,
             allowed_origins = EXCLUDED.allowed_origins,
+            status = EXCLUDED.status,
             theme_config = EXCLUDED.theme_config,
             widget_config = EXCLUDED.widget_config
         `,
@@ -125,6 +138,7 @@ async function main() {
           project.key,
           project.displayName,
           project.allowedOrigins,
+          project.status,
           JSON.stringify(project.themeConfig),
           JSON.stringify(project.widgetConfig)
         ]

@@ -1,0 +1,664 @@
+{%- comment -%}
+  IWANT / InSales / Liquid integration for chat-me.
+
+  How to use:
+  1. Replace the old Telegram block with this snippet.
+  2. Set the real storefront host in chat-me `allowed_origins` for `insales-store`.
+  3. If your privacy policy page has a custom URL, replace `PRIVACY_URL` below.
+{%- endcomment -%}
+
+<div class="contact-float-group{% if template == 'product' %} product-page-btns{% endif %}">
+  <a
+    href="#shop-chat"
+    rel="nofollow noopener"
+    class="contact-fix-btn"
+    data-chat-me-trigger
+    aria-label="Открыть чат с магазином"
+  >
+    Чат
+  </a>
+</div>
+
+<div id="insales-chat-me-root" aria-hidden="true"></div>
+
+<script>
+  (function () {
+    var CHAT_WIDGET_URL = "https://chat.black8.tech/widget/chat-me-widget.js?v=20260319-insales-iwant-1";
+    var CHAT_API_BASE_URL = "https://chat.black8.tech";
+    var CHAT_PROJECT_KEY = "insales-store";
+    var TARGET_ID = "insales-chat-me-root";
+    var PRIVACY_URL = window.location.origin + "/page/politika_konfidentsialnosti";
+
+    window.__insalesChatMeController__ = window.__insalesChatMeController__ || null;
+    window.__insalesChatMeScriptPromise__ = window.__insalesChatMeScriptPromise__ || null;
+    window.__insalesChatMeOpenRequested__ = window.__insalesChatMeOpenRequested__ || false;
+
+    var widgetCopy = {
+      ru: {
+        buttonLabel: "Чат",
+        closeLabel: "Закрыть чат",
+        title: "Чат магазина",
+        subtitle: "Подскажем по наличию, размерам, доставке и заказу.",
+        initialGreeting: "Здравствуйте. Напишите вопрос по наличию, размерам, доставке или заказу, и магазин ответит прямо в этом чате.",
+        placeholder: "Напишите сообщение",
+        nameLabel: "Как к вам обращаться",
+        contactLabel: "Телефон или email",
+        sendLabel: "Отправить",
+        sendPendingLabel: "Отправляем...",
+        emptyLabel: "Оставьте сообщение, и магазин ответит прямо здесь.",
+        privacyLabel: "Политика конфиденциальности",
+        eyebrowLabel: "IWANT",
+        statusIdle: "Локальный чат магазина",
+        statusConnecting: "Подключаем чат...",
+        statusOffline: "Если ответ задержится, переписка все равно сохранится.",
+        visitorMessageLabel: "Вы",
+        operatorMessageLabel: "Магазин",
+        systemMessageLabel: "Магазин",
+        leadTitle: "Как с вами связаться?",
+        leadHint: "Оставьте имя и телефон или email. Так мы не потеряем переписку, даже если вы закроете чат.",
+        leadSaved: "Контакт сохранен. Теперь можно писать в чат.",
+        leadSave: "Сохранить",
+        leadLockedPlaceholder: "Сначала сохраните контакт"
+      },
+      en: {
+        buttonLabel: "Chat",
+        closeLabel: "Close chat",
+        title: "Store chat",
+        subtitle: "Ask about availability, sizing, shipping, or your order.",
+        initialGreeting: "Hello. Ask about availability, sizing, shipping, or your order, and the store will reply right here in chat.",
+        placeholder: "Write your message",
+        nameLabel: "Your name",
+        contactLabel: "Phone or email",
+        sendLabel: "Send",
+        sendPendingLabel: "Sending...",
+        emptyLabel: "Leave a message and the store will reply right here.",
+        privacyLabel: "Privacy policy",
+        eyebrowLabel: "IWANT",
+        statusIdle: "On-site store chat",
+        statusConnecting: "Connecting chat...",
+        statusOffline: "If the reply takes a moment, the conversation will still stay saved.",
+        visitorMessageLabel: "You",
+        operatorMessageLabel: "Store",
+        systemMessageLabel: "Store",
+        leadTitle: "How can we reach you?",
+        leadHint: "Leave your name and phone or email. This keeps the conversation safe even if you close the chat.",
+        leadSaved: "Contact saved. You can continue in chat.",
+        leadSave: "Save",
+        leadLockedPlaceholder: "Save contact details first"
+      }
+    };
+
+    var widgetOverrideStyles = [
+      ":host, .chat-me {",
+      "  --iwant-panel: rgba(10, 10, 10, 0.97);",
+      "  --iwant-panel-soft: rgba(16, 16, 16, 0.94);",
+      "  --iwant-border: rgba(255, 255, 255, 0.12);",
+      "  --iwant-border-strong: rgba(255, 255, 255, 0.22);",
+      "  --iwant-text: #ffffff;",
+      "  --iwant-muted: rgba(255, 255, 255, 0.62);",
+      "}",
+      ".chat-me {",
+      "  bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);",
+      "}",
+      ".chat-me.right {",
+      "  right: calc(env(safe-area-inset-right, 0px) + 24px);",
+      "}",
+      ".chat-me.left {",
+      "  left: calc(env(safe-area-inset-left, 0px) + 24px);",
+      "}",
+      ".chat-me__shell {",
+      "  gap: 0;",
+      "}",
+      ".chat-me__toggle {",
+      "  display: none !important;",
+      "}",
+      ".chat-me__panel {",
+      "  width: min(388px, calc(100vw - 28px));",
+      "  max-height: min(720px, calc(100vh - 84px));",
+      "  border-radius: 26px;",
+      "  border: 1px solid var(--iwant-border);",
+      "  background:",
+      "    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),",
+      "    radial-gradient(circle at top center, rgba(255, 255, 255, 0.06), transparent 36%),",
+      "    var(--iwant-panel);",
+      "  color: var(--iwant-text);",
+      "  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.34);",
+      "  backdrop-filter: blur(16px);",
+      "}",
+      ".chat-me__header {",
+      "  padding: 18px 18px 15px;",
+      "  border-bottom: 1px solid rgba(255, 255, 255, 0.08);",
+      "  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0));",
+      "}",
+      ".chat-me__header-top {",
+      "  align-items: flex-start;",
+      "  gap: 12px;",
+      "}",
+      ".chat-me__header-copy,",
+      ".chat-me__body,",
+      ".chat-me__composer,",
+      ".chat-me__lead-card,",
+      ".chat-me__empty,",
+      ".chat-me__privacy {",
+      "  font-family: \"Helvetica Neue\", Arial, sans-serif;",
+      "}",
+      ".chat-me__eyebrow,",
+      ".chat-me__status,",
+      ".chat-me__meta,",
+      ".chat-me__bubble::before {",
+      "  font-family: Arial, sans-serif;",
+      "}",
+      ".chat-me__eyebrow {",
+      "  font-size: 11px;",
+      "  font-weight: 700;",
+      "  letter-spacing: 0.28em;",
+      "  text-transform: uppercase;",
+      "  color: rgba(255, 255, 255, 0.78);",
+      "}",
+      ".chat-me__title {",
+      "  margin-top: 8px;",
+      "  font-size: 28px;",
+      "  font-weight: 800;",
+      "  line-height: 1;",
+      "  letter-spacing: -0.04em;",
+      "  text-transform: uppercase;",
+      "  color: #ffffff;",
+      "}",
+      ".chat-me__subtitle {",
+      "  margin-top: 8px;",
+      "  max-width: 30ch;",
+      "  font-size: 14px;",
+      "  line-height: 1.58;",
+      "  color: var(--iwant-muted);",
+      "}",
+      ".chat-me__status {",
+      "  margin-top: 12px;",
+      "  min-height: 1rem;",
+      "  font-size: 11px;",
+      "  letter-spacing: 0.16em;",
+      "  text-transform: uppercase;",
+      "  color: rgba(255, 255, 255, 0.56);",
+      "}",
+      ".chat-me__close {",
+      "  width: 36px;",
+      "  height: 36px;",
+      "  border-radius: 12px;",
+      "  border-color: var(--iwant-border-strong);",
+      "  background: rgba(255, 255, 255, 0.02);",
+      "  color: #ffffff;",
+      "}",
+      ".chat-me__close:hover {",
+      "  background: rgba(255, 255, 255, 0.08);",
+      "  border-color: rgba(255, 255, 255, 0.3);",
+      "}",
+      ".chat-me__body {",
+      "  padding: 14px 16px;",
+      "  gap: 12px;",
+      "  background: linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0));",
+      "}",
+      ".chat-me__lead-card,",
+      ".chat-me__empty {",
+      "  border-radius: 18px;",
+      "  border: 1px solid rgba(255, 255, 255, 0.08);",
+      "  background: rgba(255, 255, 255, 0.015);",
+      "}",
+      ".chat-me__lead-card {",
+      "  padding: 14px;",
+      "}",
+      ".chat-me__lead-card.is-saved {",
+      "  background: rgba(255, 255, 255, 0.03);",
+      "}",
+      ".chat-me__lead-title {",
+      "  font-size: 20px;",
+      "  font-weight: 700;",
+      "  line-height: 1.1;",
+      "  text-transform: uppercase;",
+      "  letter-spacing: -0.03em;",
+      "  color: #ffffff;",
+      "}",
+      ".chat-me__lead-text,",
+      ".chat-me__lead-success,",
+      ".chat-me__composer-note {",
+      "  font-size: 13px;",
+      "  line-height: 1.6;",
+      "  color: var(--iwant-muted);",
+      "}",
+      ".chat-me__lead-success {",
+      "  color: rgba(255, 255, 255, 0.82);",
+      "}",
+      ".chat-me__fields {",
+      "  gap: 10px;",
+      "}",
+      ".chat-me__fields input,",
+      ".chat-me__textarea {",
+      "  border-radius: 16px;",
+      "  border: 1px solid rgba(255, 255, 255, 0.08);",
+      "  background: rgba(255, 255, 255, 0.03);",
+      "  color: #ffffff;",
+      "}",
+      ".chat-me__fields input:focus,",
+      ".chat-me__textarea:focus {",
+      "  border-color: rgba(255, 255, 255, 0.22);",
+      "  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);",
+      "}",
+      ".chat-me__fields input::placeholder,",
+      ".chat-me__textarea::placeholder {",
+      "  color: rgba(255, 255, 255, 0.42);",
+      "}",
+      ".chat-me__lead-save {",
+      "  display: inline-flex;",
+      "  align-items: center;",
+      "  justify-content: center;",
+      "  justify-self: start;",
+      "  width: auto;",
+      "  max-width: fit-content;",
+      "  padding: 10px 15px;",
+      "  border-radius: 999px;",
+      "  background: #ffffff;",
+      "  color: #0a0a0a;",
+      "  box-shadow: none;",
+      "  font-size: 12px;",
+      "  font-weight: 700;",
+      "  letter-spacing: 0.02em;",
+      "  text-transform: none;",
+      "  white-space: nowrap;",
+      "}",
+      ".chat-me__send {",
+      "  border-radius: 999px;",
+      "  background: #ffffff;",
+      "  color: #0a0a0a;",
+      "  box-shadow: none;",
+      "  font-size: 11px;",
+      "  font-weight: 700;",
+      "  letter-spacing: 0.14em;",
+      "  text-transform: uppercase;",
+      "}",
+      ".chat-me__bubble {",
+      "  align-self: stretch;",
+      "  max-width: 100%;",
+      "  padding: 0 0 14px;",
+      "  border: 0 !important;",
+      "  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;",
+      "  background: none !important;",
+      "  box-shadow: none !important;",
+      "  color: #ffffff;",
+      "}",
+      ".chat-me__bubble:last-child {",
+      "  padding-bottom: 0;",
+      "  border-bottom: 0 !important;",
+      "}",
+      ".chat-me__bubble::before {",
+      "  content: attr(data-author-label);",
+      "  display: block;",
+      "  margin-bottom: 8px;",
+      "  font-size: 10px;",
+      "  font-weight: 700;",
+      "  letter-spacing: 0.22em;",
+      "  text-transform: uppercase;",
+      "  color: rgba(255, 255, 255, 0.56);",
+      "}",
+      ".chat-me__bubble.visitor {",
+      "  text-align: right;",
+      "}",
+      ".chat-me__bubble > :first-child {",
+      "  display: block;",
+      "  font-size: 15px;",
+      "  line-height: 1.62;",
+      "  color: inherit;",
+      "}",
+      ".chat-me__meta {",
+      "  display: block;",
+      "  margin-top: 6px;",
+      "  text-align: inherit;",
+      "  font-size: 11px;",
+      "  letter-spacing: 0.04em;",
+      "  color: rgba(255, 255, 255, 0.44);",
+      "}",
+      ".chat-me__composer {",
+      "  gap: 10px;",
+      "  border-top: 1px solid rgba(255, 255, 255, 0.08);",
+      "  padding: 14px 16px 16px;",
+      "  background: var(--iwant-panel-soft);",
+      "}",
+      ".chat-me__textarea {",
+      "  min-height: 92px;",
+      "}",
+      ".chat-me__privacy {",
+      "  color: rgba(255, 255, 255, 0.5);",
+      "  font-size: 11px;",
+      "  letter-spacing: 0.12em;",
+      "  text-transform: uppercase;",
+      "  text-decoration: none;",
+      "}",
+      ".chat-me__privacy:hover {",
+      "  color: #ffffff;",
+      "}",
+      ".chat-me__error {",
+      "  color: rgba(255, 255, 255, 0.8);",
+      "  font-size: 11px;",
+      "  line-height: 1.5;",
+      "}",
+      "@media (max-width: 640px) {",
+      "  .chat-me {",
+      "    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);",
+      "  }",
+      "  .chat-me.right {",
+      "    right: calc(env(safe-area-inset-right, 0px) + 10px);",
+      "  }",
+      "  .chat-me.left {",
+      "    left: calc(env(safe-area-inset-left, 0px) + 10px);",
+      "  }",
+      "  .chat-me__panel {",
+      "    width: min(360px, calc(100vw - 20px));",
+      "    height: min(64svh, 520px);",
+      "    max-height: calc(100svh - 32px);",
+      "    border-radius: 22px;",
+      "    backdrop-filter: none;",
+      "  }",
+      "  .chat-me__header {",
+      "    padding: 14px 14px 12px;",
+      "  }",
+      "  .chat-me__title {",
+      "    font-size: 24px;",
+      "  }",
+      "  .chat-me__subtitle {",
+      "    font-size: 13px;",
+      "  }",
+      "  .chat-me__body {",
+      "    padding: 12px 14px;",
+      "    gap: 10px;",
+      "  }",
+      "  .chat-me__lead-card {",
+      "    padding: 13px;",
+      "    border-radius: 16px;",
+      "  }",
+      "  .chat-me__lead-title {",
+      "    font-size: 18px;",
+      "  }",
+      "  .chat-me__lead-save {",
+      "    padding: 9px 14px;",
+      "    font-size: 10px;",
+      "    letter-spacing: 0.01em;",
+      "  }",
+      "  .chat-me__bubble > :first-child {",
+      "    font-size: 14px;",
+      "  }",
+      "  .chat-me__composer {",
+      "    padding: 12px 14px 14px;",
+      "  }",
+      "  .chat-me__textarea {",
+      "    min-height: 76px;",
+      "  }",
+      "  .chat-me__footer {",
+      "    grid-template-columns: 1fr;",
+      "    gap: 10px;",
+      "  }",
+      "  .chat-me__send {",
+      "    width: 100%;",
+      "    grid-column: 1;",
+      "  }",
+      "}",
+    ].join("\n");
+
+    function getLocale() {
+      var htmlLang = (document.documentElement.getAttribute("lang") || "").toLowerCase();
+      if (htmlLang.indexOf("en") === 0) {
+        return "en";
+      }
+      return "ru";
+    }
+
+    function setElementText(element, value) {
+      if (!element || element.textContent === value) {
+        return;
+      }
+      element.textContent = value;
+    }
+
+    function loadWidgetScript() {
+      if (window.ChatMeWidget) {
+        return Promise.resolve();
+      }
+
+      if (window.__insalesChatMeScriptPromise__) {
+        return window.__insalesChatMeScriptPromise__;
+      }
+
+      window.__insalesChatMeScriptPromise__ = new Promise(function (resolve, reject) {
+        var existing = document.querySelector('script[data-chat-me-widget="insales-iwant"]');
+        if (existing) {
+          existing.addEventListener("load", function () { resolve(); }, { once: true });
+          existing.addEventListener("error", function () { reject(new Error("chat-me widget failed to load")); }, { once: true });
+          return;
+        }
+
+        var script = document.createElement("script");
+        script.src = CHAT_WIDGET_URL;
+        script.async = true;
+        script.defer = true;
+        script.dataset.chatMeWidget = "insales-iwant";
+        script.onload = function () { resolve(); };
+        script.onerror = function () {
+          window.__insalesChatMeScriptPromise__ = null;
+          script.remove();
+          reject(new Error("chat-me widget failed to load"));
+        };
+        document.head.appendChild(script);
+      });
+
+      return window.__insalesChatMeScriptPromise__;
+    }
+
+    function applyEnhancements(target) {
+      var shadowRoot = target.shadowRoot;
+      if (!shadowRoot) {
+        return function () {};
+      }
+
+      var locale = getLocale();
+      var copy = widgetCopy[locale] || widgetCopy.ru;
+
+      function sync() {
+        var styleTag = shadowRoot.querySelector("#insales-iwant-chat-overrides");
+        if (!styleTag) {
+          styleTag = document.createElement("style");
+          styleTag.id = "insales-iwant-chat-overrides";
+          shadowRoot.appendChild(styleTag);
+        }
+
+        if (styleTag.textContent !== widgetOverrideStyles) {
+          styleTag.textContent = widgetOverrideStyles;
+        }
+
+        var root = shadowRoot.querySelector(".chat-me");
+        if (!root) {
+          return;
+        }
+
+        root.dataset.locale = locale;
+        root.lang = locale;
+
+        setElementText(shadowRoot.querySelector(".chat-me__eyebrow"), copy.eyebrowLabel);
+        setElementText(shadowRoot.querySelector(".chat-me__title"), copy.title);
+        setElementText(shadowRoot.querySelector(".chat-me__subtitle"), copy.subtitle);
+        setElementText(shadowRoot.querySelector(".chat-me__empty"), copy.emptyLabel);
+        setElementText(shadowRoot.querySelector(".chat-me__privacy"), copy.privacyLabel);
+        setElementText(shadowRoot.querySelector(".chat-me__lead-title"), copy.leadTitle);
+        setElementText(shadowRoot.querySelector(".chat-me__composer-note"), copy.leadLockedPlaceholder);
+
+        var leadCard = shadowRoot.querySelector(".chat-me__lead-card");
+        var leadText = shadowRoot.querySelector(".chat-me__lead-text");
+        var leadSuccess = shadowRoot.querySelector(".chat-me__lead-success");
+
+        if (leadCard && leadCard.classList.contains("is-saved")) {
+          setElementText(leadSuccess, copy.leadSaved);
+        } else {
+          setElementText(leadText, copy.leadHint);
+        }
+
+        var closeButton = shadowRoot.querySelector(".chat-me__close");
+        var leadSaveButton = shadowRoot.querySelector(".chat-me__lead-save");
+        var sendButton = shadowRoot.querySelector(".chat-me__send");
+        var textarea = shadowRoot.querySelector(".chat-me__textarea");
+        var nameInput = shadowRoot.querySelector("input[name='visitor-name']");
+        var contactInput = shadowRoot.querySelector("input[name='visitor-contact']");
+
+        if (closeButton) {
+          closeButton.setAttribute("aria-label", copy.closeLabel);
+          closeButton.setAttribute("title", copy.closeLabel);
+        }
+
+        setElementText(leadSaveButton, copy.leadSave);
+
+        if (sendButton) {
+          setElementText(sendButton, sendButton.disabled ? copy.sendPendingLabel : copy.sendLabel);
+        }
+
+        if (textarea && textarea.getAttribute("placeholder") !== copy.placeholder) {
+          textarea.setAttribute("placeholder", copy.placeholder);
+        }
+
+        if (nameInput && nameInput.getAttribute("placeholder") !== copy.nameLabel) {
+          nameInput.setAttribute("placeholder", copy.nameLabel);
+        }
+
+        if (contactInput && contactInput.getAttribute("placeholder") !== copy.contactLabel) {
+          contactInput.setAttribute("placeholder", copy.contactLabel);
+        }
+
+        var status = shadowRoot.querySelector(".chat-me__status");
+        if (status) {
+          var current = (status.textContent || "").trim();
+
+          if (!current) {
+            status.textContent = copy.statusIdle;
+          } else if (/подключ|connect/i.test(current)) {
+            status.textContent = copy.statusConnecting;
+          } else if (/переподключ|reconnect/i.test(current)) {
+            status.textContent = copy.statusOffline;
+          }
+        }
+
+        var bubbles = shadowRoot.querySelectorAll(".chat-me__bubble");
+        Array.prototype.forEach.call(bubbles, function (bubble) {
+          var authorLabel = copy.operatorMessageLabel;
+          if (bubble.classList.contains("visitor")) {
+            authorLabel = copy.visitorMessageLabel;
+          } else if (bubble.classList.contains("system")) {
+            authorLabel = copy.systemMessageLabel;
+          }
+          if (bubble.getAttribute("data-author-label") !== authorLabel) {
+            bubble.setAttribute("data-author-label", authorLabel);
+          }
+        });
+      }
+
+      sync();
+
+      var frameId = 0;
+      var observer = new MutationObserver(function () {
+        if (frameId) {
+          cancelAnimationFrame(frameId);
+        }
+        frameId = requestAnimationFrame(sync);
+      });
+
+      observer.observe(shadowRoot, {
+        childList: true,
+        subtree: true
+      });
+
+      return function () {
+        observer.disconnect();
+        if (frameId) {
+          cancelAnimationFrame(frameId);
+        }
+      };
+    }
+
+    function openChat() {
+      window.__insalesChatMeOpenRequested__ = true;
+      if (window.__insalesChatMeController__) {
+        window.__insalesChatMeController__.open();
+        window.__insalesChatMeOpenRequested__ = false;
+      }
+    }
+
+    function bindTriggers() {
+      var triggers = document.querySelectorAll("[data-chat-me-trigger]");
+      Array.prototype.forEach.call(triggers, function (trigger) {
+        if (trigger.dataset.chatMeBound === "true") {
+          return;
+        }
+
+        trigger.dataset.chatMeBound = "true";
+        trigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          openChat();
+        });
+      });
+    }
+
+    function mountWidget() {
+      loadWidgetScript()
+        .then(function () {
+          if (!window.ChatMeWidget) {
+            return;
+          }
+
+          var target = document.getElementById(TARGET_ID);
+          if (!target) {
+            return;
+          }
+
+          var copy = widgetCopy[getLocale()] || widgetCopy.ru;
+
+          if (window.__insalesChatMeCleanupEnhancements__) {
+            window.__insalesChatMeCleanupEnhancements__();
+            window.__insalesChatMeCleanupEnhancements__ = null;
+          }
+
+          if (window.__insalesChatMeController__) {
+            window.__insalesChatMeController__.destroy();
+            window.__insalesChatMeController__ = null;
+          }
+
+          window.__insalesChatMeController__ = window.ChatMeWidget.init({
+            target: target,
+            projectKey: CHAT_PROJECT_KEY,
+            apiBaseUrl: CHAT_API_BASE_URL,
+            locale: getLocale(),
+            privacyUrl: PRIVACY_URL,
+            initialGreeting: copy.initialGreeting,
+            theme: {
+              accentColor: "#ffffff",
+              buttonLabel: copy.buttonLabel,
+              position: "bottom-right",
+              borderRadius: 26
+            }
+          });
+
+          window.__insalesChatMeCleanupEnhancements__ = applyEnhancements(target);
+
+          if (window.__insalesChatMeOpenRequested__) {
+            window.__insalesChatMeController__.open();
+            window.__insalesChatMeOpenRequested__ = false;
+          }
+        })
+        .catch(function () {
+          return;
+        });
+    }
+
+    function start() {
+      bindTriggers();
+      mountWidget();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", start, { once: true });
+    } else {
+      start();
+    }
+  })();
+</script>

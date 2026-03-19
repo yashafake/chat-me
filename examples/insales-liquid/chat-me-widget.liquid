@@ -1,8 +1,8 @@
 {%- comment -%}
-  InSales / Liquid integration snippet for chat-me
-  Requirements before enabling:
-  1. change project status to active
-  2. set the real storefront host in chat_projects.allowed_origins
+  Minimal InSales / Liquid integration for chat-me.
+
+  For a styled black/white storefront button that replaces Telegram,
+  see `examples/insales-liquid/iwant-chat-widget.liquid`.
 {%- endcomment -%}
 
 <script src="https://chat.black8.tech/widget/chat-me-widget.js" defer></script>
@@ -15,10 +15,10 @@
       apiBaseUrl: "https://chat.black8.tech",
       locale: "ru",
       theme: {
-        accentColor: "#d8b774",
-        buttonLabel: "Связаться",
-        position: "bottom-left",
-        borderRadius: 22
+        accentColor: "#111111",
+        buttonLabel: "Чат",
+        position: "bottom-right",
+        borderRadius: 24
       }
     });
   });
