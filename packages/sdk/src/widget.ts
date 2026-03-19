@@ -222,6 +222,42 @@ function validateLeadDetails(
   return "";
 }
 
+function launcherIcon(): string {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M4 6.75A2.75 2.75 0 0 1 6.75 4h10.5A2.75 2.75 0 0 1 20 6.75v6.5A2.75 2.75 0 0 1 17.25 16H10l-4.2 3.15c-.72.54-1.8.03-1.8-.87V6.75Z"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8.25 9.5h7.5M8.25 12.5h4.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+      />
+    </svg>
+  `;
+}
+
+function closeIcon(): string {
+  return `
+    <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+      <path
+        d="M5.5 5.5 14.5 14.5M14.5 5.5 5.5 14.5"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+      />
+    </svg>
+  `;
+}
+
 function createStyle(accentColor: string, radius: number): string {
   return `
     :host, .chat-me {
@@ -251,9 +287,13 @@ function createStyle(accentColor: string, radius: number): string {
     .chat-me__shell {
       display: grid;
       gap: 12px;
+      justify-items: end;
     }
     .chat-me__toggle {
       justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
       border: none;
       border-radius: 999px;
       background: linear-gradient(135deg, var(--chat-me-accent), color-mix(in srgb, var(--chat-me-accent) 58%, white));
@@ -269,6 +309,22 @@ function createStyle(accentColor: string, radius: number): string {
       transform: translateY(-1px);
       box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
     }
+    .chat-me__toggle-icon,
+    .chat-me__close-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+    .chat-me__toggle-icon svg,
+    .chat-me__close-icon svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .chat-me.open .chat-me__toggle {
+      display: none;
+    }
     .chat-me__panel {
       overflow: hidden;
       border-radius: calc(var(--chat-me-radius) + 8px);
@@ -282,6 +338,8 @@ function createStyle(accentColor: string, radius: number): string {
       width: min(420px, calc(100vw - 24px));
       height: min(680px, calc(100vh - 96px));
       display: none;
+      contain: layout paint style;
+      transform: translateZ(0);
     }
     .chat-me.open .chat-me__panel {
       display: grid;
@@ -291,6 +349,35 @@ function createStyle(accentColor: string, radius: number): string {
       padding: 18px 18px 14px;
       border-bottom: 1px solid var(--chat-me-border);
       background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
+    }
+    .chat-me__header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .chat-me__header-copy {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .chat-me__close {
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--chat-me-border);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      color: var(--chat-me-text);
+      cursor: pointer;
+      transition: background .2s ease, border-color .2s ease, transform .2s ease;
+    }
+    .chat-me__close:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.09);
     }
     .chat-me__eyebrow {
       font-size: 11px;
@@ -319,6 +406,8 @@ function createStyle(accentColor: string, radius: number): string {
       overflow-y: auto;
       display: grid;
       gap: 12px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
     .chat-me__empty {
       border: 1px dashed rgba(255, 255, 255, 0.12);
@@ -470,17 +559,81 @@ function createStyle(accentColor: string, radius: number): string {
     }
     @media (max-width: 640px) {
       .chat-me {
-        left: 12px !important;
-        right: 12px !important;
-        bottom: 12px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
         max-width: none;
       }
+      .chat-me.right {
+        right: calc(env(safe-area-inset-right, 0px) + 14px);
+        left: auto !important;
+      }
+      .chat-me.left {
+        left: calc(env(safe-area-inset-left, 0px) + 14px) !important;
+        right: auto !important;
+      }
       .chat-me__panel {
-        width: auto;
-        height: min(78vh, 680px);
+        width: min(368px, calc(100vw - 24px));
+        height: min(64svh, 560px);
+        max-height: calc(100svh - 112px);
+        margin-bottom: 8px;
+        border-radius: 24px;
       }
       .chat-me__toggle {
-        justify-self: stretch;
+        justify-self: end;
+        width: 58px;
+        height: 58px;
+        min-width: 58px;
+        padding: 0;
+        gap: 0;
+        border-radius: 999px;
+      }
+      .chat-me__toggle-label {
+        display: none;
+      }
+      .chat-me__header {
+        padding: 14px 14px 10px;
+      }
+      .chat-me__close {
+        width: 34px;
+        height: 34px;
+      }
+      .chat-me__title {
+        margin-top: 6px;
+        font-size: 18px;
+      }
+      .chat-me__subtitle {
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .chat-me__status {
+        margin-top: 8px;
+      }
+      .chat-me__body {
+        padding: 12px;
+        gap: 10px;
+      }
+      .chat-me__lead-card,
+      .chat-me__empty,
+      .chat-me__bubble {
+        border-radius: 20px;
+      }
+      .chat-me__lead-card {
+        padding: 12px;
+      }
+      .chat-me__bubble {
+        max-width: 92%;
+        padding: 11px 12px;
+        font-size: 13px;
+      }
+      .chat-me__composer {
+        padding: 12px;
+        gap: 8px;
+      }
+      .chat-me__textarea {
+        min-height: 78px;
+        resize: none;
+      }
+      .chat-me__footer {
+        align-items: flex-end;
       }
     }
   `;
@@ -879,26 +1032,35 @@ export function mountChatWidget(
         <div class="chat-me__shell">
           <div class="chat-me__panel">
             <div class="chat-me__header">
-              <div class="chat-me__eyebrow">${escapeHtml(state.project?.displayName || "chat-me")}</div>
-              <div class="chat-me__title">${effectiveStrings.title}</div>
-              <div class="chat-me__subtitle">${escapeHtml(greeting)}</div>
-              <div class="chat-me__status">
-                ${
-                  state.loading
-                    ? effectiveStrings.connecting
-                    : state.fallbackPolling
-                      ? effectiveStrings.offline
-                      : state.connected
-                        ? ""
-                        : ""
-                }
+              <div class="chat-me__header-top">
+                <div class="chat-me__header-copy">
+                  <div class="chat-me__eyebrow">${escapeHtml(state.project?.displayName || "chat-me")}</div>
+                  <div class="chat-me__title">${effectiveStrings.title}</div>
+                  <div class="chat-me__subtitle">${escapeHtml(greeting)}</div>
+                  <div class="chat-me__status">
+                    ${
+                      state.loading
+                        ? effectiveStrings.connecting
+                        : state.fallbackPolling
+                          ? effectiveStrings.offline
+                          : state.connected
+                            ? ""
+                            : ""
+                    }
+                  </div>
+                </div>
+                <button class="chat-me__close" type="button" data-role="close" aria-label="${escapeHtml(effectiveStrings.close)}">
+                  <span class="chat-me__close-icon">${closeIcon()}</span>
+                </button>
               </div>
             </div>
             <div class="chat-me__body">
               ${leadBlock}
               ${
                 state.messages.length === 0
-                  ? `<div class="chat-me__empty">${effectiveStrings.empty}</div>`
+                  ? composerLocked
+                    ? ""
+                    : `<div class="chat-me__empty">${effectiveStrings.empty}</div>`
                   : state.messages
                       .map(
                         (message) => `
@@ -936,7 +1098,14 @@ export function mountChatWidget(
               </div>
             </div>
           </div>
-          <button class="chat-me__toggle" type="button">${escapeHtml(state.open ? effectiveStrings.close : theme.buttonLabel || effectiveStrings.open)}</button>
+          <button
+            class="chat-me__toggle"
+            type="button"
+            aria-label="${escapeHtml(theme.buttonLabel || effectiveStrings.open)}"
+          >
+            <span class="chat-me__toggle-icon">${launcherIcon()}</span>
+            <span class="chat-me__toggle-label">${escapeHtml(theme.buttonLabel || effectiveStrings.open)}</span>
+          </button>
         </div>
       </div>
     `;
