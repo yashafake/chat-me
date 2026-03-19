@@ -55,6 +55,7 @@ export interface ChatWidgetConfig {
   locale?: "ru" | "en";
   privacyUrl?: string;
   initialGreeting?: string;
+  initialDraft?: string;
   allowedOrigins?: string[];
   theme?: PublicProjectTheme;
   target?: string | HTMLElement;

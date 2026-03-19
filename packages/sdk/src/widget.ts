@@ -11,7 +11,7 @@ import {
 const STORAGE_PREFIX = "chat-me:visitor:";
 
 export interface ChatWidgetController {
-  open(): void;
+  open(draft?: string): void;
   close(): void;
   destroy(): void;
 }
@@ -65,6 +65,10 @@ function formatTime(value: string, locale: "ru" | "en"): string {
 
 function clamp(value: string): string {
   return value.replace(/\s+\n/g, "\n").trim().slice(0, 4000);
+}
+
+function normalizeDraft(value: string | undefined): string {
+  return (value || "").slice(0, 4000);
 }
 
 function resolveTarget(target: string | HTMLElement | undefined): HTMLElement {
@@ -671,7 +675,7 @@ export function mountChatWidget(
     conversationId: null,
     project: null,
     messages: [],
-    draft: "",
+    draft: normalizeDraft(config.initialDraft),
     visitor: {
       ...config.visitor
     }
@@ -928,6 +932,10 @@ export function mountChatWidget(
     }
   }
 
+  function setDraft(nextDraft: string | undefined) {
+    state.draft = normalizeDraft(nextDraft);
+  }
+
   function bindInputs() {
     const toggleButton = mountRoot.querySelector<HTMLButtonElement>(".chat-me__toggle");
     const closeButton = mountRoot.querySelector<HTMLButtonElement>("[data-role='close']");
@@ -1142,7 +1150,10 @@ export function mountChatWidget(
   }
 
   return {
-    open() {
+    open(draft) {
+      if (typeof draft === "string") {
+        setDraft(draft);
+      }
       state.open = true;
       render();
       if (!state.bootstrapped) {

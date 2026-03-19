@@ -100,7 +100,7 @@ async function main() {
         widgetConfig: {
           locale: "ru",
           initialGreeting: "Здравствуйте. Напишите вопрос по ассортименту, размерам, доставке или заказу.",
-          privacyUrl: "https://iwantconcept.store/page/politika_konfidentsialnosti",
+          privacyUrl: "https://iwantconcept.store/page/politika_konf",
           collectName: true,
           collectEmail: true,
           collectPhone: true

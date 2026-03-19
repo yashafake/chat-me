@@ -1,0 +1,26 @@
+{%- comment -%}
+  Usage after `iwant-chat-widget.liquid` is included once in the theme layout.
+
+  You can place any of these triggers in page templates, rich content blocks, or snippets:
+{%- endcomment -%}
+
+<a href="#shop-chat" class="contact-fix-btn">Чат</a>
+
+<a href="#shop-chat" class="button button-black">Написать менеджеру</a>
+
+<button type="button" data-chat-me-trigger class="button button-black">
+  Уточнить наличие
+</button>
+
+{%- capture product_chat_draft -%}
+Здравствуйте! У меня вопрос по товару: {{ product.title }} ({{ account.url }}{{ product.url }})
+{%- endcapture -%}
+
+<button
+  type="button"
+  data-chat-me-trigger
+  data-chat-me-draft="{{ product_chat_draft | strip | escape_once }}"
+  class="button button-black"
+>
+  Вопрос по товару
+</button>
