@@ -1,5 +1,5 @@
 import { build, context } from "esbuild";
-import { mkdir } from "node:fs/promises";
+import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,18 +7,23 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const watch = process.argv.includes("--watch");
 const outdir = path.resolve(__dirname, "../dist");
 
+await rm(outdir, { recursive: true, force: true });
 await mkdir(outdir, { recursive: true });
 
 const buildOptions = {
-  entryPoints: [path.resolve(__dirname, "../src/embed.ts")],
-  outfile: path.resolve(outdir, "chat-me-widget.js"),
+  entryPoints: {
+    "chat-me-widget": path.resolve(__dirname, "../src/embed.ts"),
+    "chat-me-widget.runtime": path.resolve(__dirname, "../src/runtime.ts")
+  },
+  outdir,
+  entryNames: "[name]",
   bundle: true,
   format: "iife",
-  globalName: "ChatMeWidgetBundle",
   platform: "browser",
   target: ["es2020"],
-  sourcemap: true,
-  minify: false,
+  sourcemap: watch,
+  minify: !watch,
+  legalComments: "none",
   define: {
     "process.env.NODE_ENV": JSON.stringify(watch ? "development" : "production")
   }

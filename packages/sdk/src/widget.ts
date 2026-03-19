@@ -1012,6 +1012,8 @@ export function mountChatWidget(
         : collectPhone && !collectEmail
           ? effectiveStrings.phoneLabel
           : effectiveStrings.contactLabel;
+    const shouldRenderPanelContent =
+      state.open || state.loading || state.bootstrapped || Boolean(state.error);
     const leadBlock = leadRequired
       ? state.leadCaptured
         ? `
@@ -1039,72 +1041,78 @@ export function mountChatWidget(
       <div class="chat-me ${theme.position === "bottom-left" ? "left" : "right"} ${state.open ? "open" : ""}">
         <div class="chat-me__shell">
           <div class="chat-me__panel">
-            <div class="chat-me__header">
-              <div class="chat-me__header-top">
-                <div class="chat-me__header-copy">
-                  <div class="chat-me__eyebrow">${escapeHtml(state.project?.displayName || "chat-me")}</div>
-                  <div class="chat-me__title">${effectiveStrings.title}</div>
-                  <div class="chat-me__subtitle">${escapeHtml(greeting)}</div>
-                  <div class="chat-me__status">
-                    ${
-                      state.loading
-                        ? effectiveStrings.connecting
-                        : state.fallbackPolling
-                          ? effectiveStrings.offline
-                          : state.connected
-                            ? ""
-                            : ""
-                    }
-                  </div>
-                </div>
-                <button class="chat-me__close" type="button" data-role="close" aria-label="${escapeHtml(effectiveStrings.close)}">
-                  <span class="chat-me__close-icon">${closeIcon()}</span>
-                </button>
-              </div>
-            </div>
-            <div class="chat-me__body">
-              ${leadBlock}
-              ${
-                state.messages.length === 0
-                  ? composerLocked
-                    ? ""
-                    : `<div class="chat-me__empty">${effectiveStrings.empty}</div>`
-                  : state.messages
-                      .map(
-                        (message) => `
-                          <div class="chat-me__bubble ${message.senderType === "visitor" ? "visitor" : "operator"}">
-                            <div>${escapeHtml(message.bodyPlain)}</div>
-                            <div class="chat-me__meta">
-                              ${message.operatorName ? `${escapeHtml(message.operatorName)} · ` : ""}${formatTime(message.createdAt, config.locale || "ru")}
-                            </div>
+            ${
+              shouldRenderPanelContent
+                ? `
+                    <div class="chat-me__header">
+                      <div class="chat-me__header-top">
+                        <div class="chat-me__header-copy">
+                          <div class="chat-me__eyebrow">${escapeHtml(state.project?.displayName || "chat-me")}</div>
+                          <div class="chat-me__title">${effectiveStrings.title}</div>
+                          <div class="chat-me__subtitle">${escapeHtml(greeting)}</div>
+                          <div class="chat-me__status">
+                            ${
+                              state.loading
+                                ? effectiveStrings.connecting
+                                : state.fallbackPolling
+                                  ? effectiveStrings.offline
+                                  : state.connected
+                                    ? ""
+                                    : ""
+                            }
                           </div>
-                        `
-                      )
-                      .join("")
-              }
-            </div>
-            <div class="chat-me__composer ${composerLocked ? "is-locked" : ""}">
-              ${
-                composerLocked
-                  ? `<div class="chat-me__composer-note">${escapeHtml(effectiveStrings.leadLockedPlaceholder)}</div>`
-                  : `<textarea class="chat-me__textarea" placeholder="${effectiveStrings.placeholder}">${escapeHtml(state.draft)}</textarea>`
-              }
-              <div class="chat-me__footer">
-                <div class="chat-me__footer-copy">
-                  ${
-                    privacyUrl
-                      ? `<a class="chat-me__privacy" href="${escapeHtml(privacyUrl)}" target="_blank" rel="noreferrer">${effectiveStrings.privacy}</a>`
-                      : `<span class="chat-me__privacy"></span>`
-                  }
-                  ${state.error ? `<div class="chat-me__error">${escapeHtml(state.error)}</div>` : ""}
-                </div>
-                ${
-                  composerLocked
-                    ? ""
-                    : `<button class="chat-me__send" ${state.sending ? "disabled" : ""}>${state.sending ? effectiveStrings.connecting : effectiveStrings.send}</button>`
-                }
-              </div>
-            </div>
+                        </div>
+                        <button class="chat-me__close" type="button" data-role="close" aria-label="${escapeHtml(effectiveStrings.close)}">
+                          <span class="chat-me__close-icon">${closeIcon()}</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="chat-me__body">
+                      ${leadBlock}
+                      ${
+                        state.messages.length === 0
+                          ? composerLocked
+                            ? ""
+                            : `<div class="chat-me__empty">${effectiveStrings.empty}</div>`
+                          : state.messages
+                              .map(
+                                (message) => `
+                                  <div class="chat-me__bubble ${message.senderType === "visitor" ? "visitor" : "operator"}">
+                                    <div>${escapeHtml(message.bodyPlain)}</div>
+                                    <div class="chat-me__meta">
+                                      ${message.operatorName ? `${escapeHtml(message.operatorName)} · ` : ""}${formatTime(message.createdAt, config.locale || "ru")}
+                                    </div>
+                                  </div>
+                                `
+                              )
+                              .join("")
+                      }
+                    </div>
+                    <div class="chat-me__composer ${composerLocked ? "is-locked" : ""}">
+                      ${
+                        composerLocked
+                          ? `<div class="chat-me__composer-note">${escapeHtml(effectiveStrings.leadLockedPlaceholder)}</div>`
+                          : `<textarea class="chat-me__textarea" placeholder="${effectiveStrings.placeholder}">${escapeHtml(state.draft)}</textarea>`
+                      }
+                      <div class="chat-me__footer">
+                        <div class="chat-me__footer-copy">
+                          ${
+                            privacyUrl
+                              ? `<a class="chat-me__privacy" href="${escapeHtml(privacyUrl)}" target="_blank" rel="noreferrer">${effectiveStrings.privacy}</a>`
+                              : `<span class="chat-me__privacy"></span>`
+                          }
+                          ${state.error ? `<div class="chat-me__error">${escapeHtml(state.error)}</div>` : ""}
+                        </div>
+                        ${
+                          composerLocked
+                            ? ""
+                            : `<button class="chat-me__send" ${state.sending ? "disabled" : ""}>${state.sending ? effectiveStrings.connecting : effectiveStrings.send}</button>`
+                        }
+                      </div>
+                    </div>
+                  `
+                : ""
+            }
           </div>
           <button
             class="chat-me__toggle"
@@ -1125,28 +1133,6 @@ export function mountChatWidget(
 
   if (state.open) {
     void bootstrap();
-  } else {
-    void client
-      .initSession({
-        visitorToken: state.visitorToken || undefined,
-        visitor: state.visitor
-      })
-      .then((session) => {
-        state.project = session.project;
-        state.visitorToken = session.visitorToken;
-        state.visitor = {
-          ...state.visitor,
-          ...session.visitor
-        };
-        state.leadCaptured =
-          !requiresLeadCapture(session.project) ||
-          hasRequiredLeadDetails(session.project, state.visitor);
-        writeVisitorToken(config.projectKey, session.visitorToken);
-        render();
-      })
-      .catch(() => {
-        return;
-      });
   }
 
   return {

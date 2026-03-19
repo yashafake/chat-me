@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-import { createChatWidget } from "./widget";
 import type { ChatWidgetConfig } from "./client";
+import type { ChatWidgetController } from "./widget";
 
 export function ChatWidget(props: {
   config: ChatWidgetConfig;
@@ -17,13 +17,23 @@ export function ChatWidget(props: {
       return;
     }
 
-    const controller = createChatWidget({
-      ...props.config,
-      target: ref.current
+    let controller: ChatWidgetController | null = null;
+    let destroyed = false;
+
+    void import("./widget").then(({ createChatWidget }) => {
+      if (destroyed || !ref.current) {
+        return;
+      }
+
+      controller = createChatWidget({
+        ...props.config,
+        target: ref.current
+      });
     });
 
     return () => {
-      controller.destroy();
+      destroyed = true;
+      controller?.destroy();
     };
   }, [serializedConfig]);
 
