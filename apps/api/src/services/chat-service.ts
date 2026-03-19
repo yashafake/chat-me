@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 
 import type {
+  AdminContactListQuery,
   ChatInternalNote,
   ChatMessage,
   ConversationDetails,
@@ -66,6 +67,20 @@ function mapPushSubscription(row: any): OperatorPushSubscriptionSummary {
     createdAt: row.created_at.toISOString(),
     lastSeenAt: row.last_seen_at.toISOString(),
     lastNotifiedAt: row.last_notified_at?.toISOString() ?? null
+  };
+}
+
+function mapVisitorContact(row: any) {
+  return {
+    id: row.id,
+    projectKey: row.project_key,
+    projectDisplayName: row.project_display_name,
+    name: row.name ?? null,
+    email: row.email ?? null,
+    phone: row.phone ?? null,
+    firstSeenAt: row.first_seen_at.toISOString(),
+    lastSeenAt: row.last_seen_at.toISOString(),
+    lastConversationId: row.last_conversation_id ?? null
   };
 }
 
@@ -243,10 +258,26 @@ export async function getVisitorConversation(
     visitorToken: string;
     conversationId: number;
   }
-): Promise<{ conversationId: number; visitorId: number; projectId: number } | null> {
+): Promise<
+  | {
+      conversationId: number;
+      visitorId: number;
+      projectId: number;
+      visitorName: string | null;
+      visitorEmail: string | null;
+      visitorPhone: string | null;
+    }
+  | null
+> {
   const result = await pool.query(
     `
-      SELECT c.id AS conversation_id, v.id AS visitor_id, p.id AS project_id
+      SELECT
+        c.id AS conversation_id,
+        v.id AS visitor_id,
+        p.id AS project_id,
+        v.name AS visitor_name,
+        v.email AS visitor_email,
+        v.phone AS visitor_phone
       FROM chat_conversations c
       JOIN chat_visitors v ON v.id = c.visitor_id
       JOIN chat_projects p ON p.id = c.project_id
@@ -265,7 +296,10 @@ export async function getVisitorConversation(
   return {
     conversationId: result.rows[0].conversation_id,
     visitorId: result.rows[0].visitor_id,
-    projectId: result.rows[0].project_id
+    projectId: result.rows[0].project_id,
+    visitorName: result.rows[0].visitor_name ?? null,
+    visitorEmail: result.rows[0].visitor_email ?? null,
+    visitorPhone: result.rows[0].visitor_phone ?? null
   };
 }
 
@@ -470,15 +504,22 @@ export async function updateConversationStatus(
     status: ConversationStatus;
   }
 ): Promise<void> {
-  await pool.query(
+  const result = await pool.query(
     `
       UPDATE chat_conversations
-      SET status = $2,
-          closed_at = CASE WHEN $2 = 'open' THEN NULL ELSE NOW() END
+      SET status = $2::chat_conversation_status,
+          closed_at = CASE
+            WHEN $2::chat_conversation_status = 'open'::chat_conversation_status THEN NULL
+            ELSE NOW()
+          END
       WHERE id = $1
     `,
     [input.conversationId, input.status]
   );
+
+  if (!result.rowCount) {
+    throw new Error("Conversation not found");
+  }
 }
 
 export async function getConversationSummaryById(
@@ -504,7 +545,8 @@ export async function getConversationSummaryById(
         v.phone AS visitor_phone,
         latest.body_plain AS latest_message,
         (
-          c.last_visitor_message_at IS NOT NULL
+          c.status = 'open'
+          AND c.last_visitor_message_at IS NOT NULL
           AND (
             c.last_operator_message_at IS NULL
             OR c.last_visitor_message_at > c.last_operator_message_at
@@ -598,7 +640,8 @@ export async function listAdminConversations(
         v.phone AS visitor_phone,
         latest.body_plain AS latest_message,
         (
-          c.last_visitor_message_at IS NOT NULL
+          c.status = 'open'
+          AND c.last_visitor_message_at IS NOT NULL
           AND (
             c.last_operator_message_at IS NULL
             OR c.last_visitor_message_at > c.last_operator_message_at
@@ -626,6 +669,42 @@ export async function listAdminConversations(
   return result.rows.map(mapConversation);
 }
 
+export async function listVisitorContacts(
+  pool: Pool,
+  input: AdminContactListQuery
+) {
+  const result = await pool.query(
+    `
+      SELECT
+        v.id,
+        v.name,
+        v.email,
+        v.phone,
+        v.first_seen_at,
+        v.last_seen_at,
+        p.key AS project_key,
+        p.display_name AS project_display_name,
+        latest_conversation.id AS last_conversation_id
+      FROM chat_visitors v
+      JOIN chat_projects p ON p.id = v.project_id
+      LEFT JOIN LATERAL (
+        SELECT c.id
+        FROM chat_conversations c
+        WHERE c.visitor_id = v.id
+        ORDER BY c.last_message_at DESC, c.id DESC
+        LIMIT 1
+      ) latest_conversation ON TRUE
+      WHERE ($1::text IS NULL OR p.key = $1)
+        AND (v.email IS NOT NULL OR v.phone IS NOT NULL)
+      ORDER BY v.last_seen_at DESC, v.id DESC
+      LIMIT $2
+    `,
+    [input.projectKey ?? null, input.limit]
+  );
+
+  return result.rows.map(mapVisitorContact);
+}
+
 export async function findOperatorByIdentifier(pool: Pool, identifier: string): Promise<any | null> {
   const result = await pool.query(
     `
@@ -638,6 +717,35 @@ export async function findOperatorByIdentifier(pool: Pool, identifier: string): 
   );
 
   return result.rows[0] ?? null;
+}
+
+export async function updateOperatorDisplayName(
+  pool: Pool,
+  input: {
+    operatorId: number;
+    displayName: string;
+  }
+): Promise<OperatorSessionUser | null> {
+  const result = await pool.query(
+    `
+      UPDATE chat_operators
+      SET display_name = $2
+      WHERE id = $1
+      RETURNING id, email, display_name, role
+    `,
+    [input.operatorId, input.displayName]
+  );
+
+  if (!result.rowCount) {
+    return null;
+  }
+
+  return {
+    id: result.rows[0].id,
+    email: result.rows[0].email,
+    displayName: result.rows[0].display_name,
+    role: result.rows[0].role
+  };
 }
 
 export async function createOperatorSession(

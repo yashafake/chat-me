@@ -24,6 +24,16 @@ const safeOptionalText = (maxLength: number) =>
     .transform((value) => value || undefined)
     .optional();
 
+const optionalEmailSchema = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z
+    .string()
+    .trim()
+    .email()
+    .transform((value) => value.toLowerCase())
+    .optional()
+);
+
 export const LocaleSchema = z.enum(localeValues);
 export const ProjectStatusSchema = z.enum(projectStatusValues);
 export const ConversationStatusSchema = z.enum(conversationStatusValues);
@@ -66,7 +76,7 @@ export const PublicProjectConfigSchema = z.object({
 
 export const VisitorIdentitySchema = z.object({
   name: safeOptionalText(120),
-  email: z.email().trim().transform((value) => value.toLowerCase()).optional(),
+  email: optionalEmailSchema,
   phone: safeOptionalText(40)
 });
 
@@ -137,6 +147,15 @@ export const AdminConversationListQuerySchema = z.object({
   status: ConversationStatusSchema.optional(),
   cursor: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(30)
+});
+
+export const AdminContactListQuerySchema = z.object({
+  projectKey: z.string().trim().max(64).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(60)
+});
+
+export const OperatorProfileUpdateInputSchema = z.object({
+  displayName: z.string().trim().min(2).max(80)
 });
 
 export const SafeNotificationDispatchSchema = z.object({

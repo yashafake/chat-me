@@ -72,6 +72,10 @@ function writeSse(reply: FastifyReply, event: ChatRealtimeEvent): void {
   reply.raw.write(`data: ${JSON.stringify(event)}\n\n`);
 }
 
+function hasText(value: string | null | undefined): boolean {
+  return Boolean(value?.trim());
+}
+
 export async function registerPublicRoutes(
   app: FastifyInstance,
   context: {
@@ -112,6 +116,11 @@ export async function registerPublicRoutes(
 
     return {
       visitorToken,
+      visitor: {
+        name: visitor.name ?? undefined,
+        email: visitor.email ?? undefined,
+        phone: visitor.phone ?? undefined
+      },
       project: {
         projectKey: project.key,
         displayName: project.display_name,
@@ -180,6 +189,27 @@ export async function registerPublicRoutes(
 
     const access = await getVisitorConversation(context.pool, payload);
     assert(access, 404, "Conversation not found");
+
+    const collectName = project.widget_config?.collectName ?? false;
+    const collectEmail = project.widget_config?.collectEmail ?? false;
+    const collectPhone = project.widget_config?.collectPhone ?? false;
+
+    if (collectName) {
+      assert(hasText(access.visitorName), 400, "Visitor name is required");
+    }
+
+    if (collectEmail || collectPhone) {
+      const hasEmail = hasText(access.visitorEmail);
+      const hasPhone = hasText(access.visitorPhone);
+
+      if (collectEmail && collectPhone) {
+        assert(hasEmail || hasPhone, 400, "Visitor contact is required");
+      } else if (collectEmail) {
+        assert(hasEmail, 400, "Visitor email is required");
+      } else if (collectPhone) {
+        assert(hasPhone, 400, "Visitor phone is required");
+      }
+    }
 
     const message = await createVisitorMessage(context.pool, {
       conversationId: payload.conversationId,

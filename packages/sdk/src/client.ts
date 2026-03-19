@@ -35,6 +35,7 @@ export interface WidgetMessage {
 export interface WidgetSessionResponse {
   visitorToken: string;
   project: PublicProjectConfig;
+  visitor: ChatWidgetVisitorFields;
 }
 
 export interface ConversationBootstrapResponse {

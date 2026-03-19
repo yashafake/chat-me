@@ -46,9 +46,17 @@ async function main() {
   }));
 
   app.setErrorHandler((error, _request, reply) => {
-    const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 500;
+    const fallbackStatus =
+      Array.isArray((error as { issues?: unknown[] }).issues) ? 400 : 500;
+    const statusCode = (error as Error & { statusCode?: number }).statusCode ?? fallbackStatus;
+    const validationMessage =
+      Array.isArray((error as { issues?: Array<{ message?: string }> }).issues) &&
+      (error as { issues?: Array<{ message?: string }> }).issues?.[0]?.message
+        ? (error as { issues?: Array<{ message?: string }> }).issues?.[0]?.message
+        : null;
+
     reply.status(statusCode).send({
-      error: statusCode >= 500 ? "Internal server error" : error.message
+      error: statusCode >= 500 ? "Internal server error" : validationMessage || error.message
     });
   });
 

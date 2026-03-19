@@ -5,12 +5,11 @@
 @tailwind utilities;
 
 :root {
-  --panel-bg: rgba(13, 18, 29, 0.78);
   --page-bg:
-    radial-gradient(circle at top left, rgba(45, 212, 191, 0.16), transparent 34%),
-    radial-gradient(circle at right 10%, rgba(255, 122, 89, 0.12), transparent 30%),
-    radial-gradient(circle at bottom left, rgba(216, 183, 116, 0.08), transparent 28%),
-    linear-gradient(180deg, #08101a 0%, #0d1624 50%, #09111b 100%);
+    radial-gradient(circle at top left, rgba(132, 160, 255, 0.28), transparent 34%),
+    radial-gradient(circle at top right, rgba(255, 201, 161, 0.32), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(214, 220, 255, 0.42), transparent 38%),
+    linear-gradient(180deg, #f8f6ff 0%, #eef2ff 42%, #e8edf9 100%);
 }
 
 * {
@@ -19,15 +18,15 @@
 
 html {
   min-height: 100%;
-  background: #08101a;
-  color-scheme: dark;
+  background: #eef2ff;
+  color-scheme: light;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
   background: var(--page-bg);
-  color: #f8fbff;
+  color: #0f172a;
   font-family:
     "SF Pro Display",
     "Segoe UI",
@@ -44,7 +43,7 @@ a {
 }
 
 ::selection {
-  background: rgba(45, 212, 191, 0.32);
+  background: rgba(125, 181, 255, 0.35);
 }
 
 .chatme-desktop-only-block,

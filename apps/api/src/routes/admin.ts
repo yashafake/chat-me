@@ -2,9 +2,11 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { Pool } from "pg";
 
 import {
+  AdminContactListQuerySchema,
   AdminConversationListQuerySchema,
   InternalNoteInputSchema,
   OperatorLoginInputSchema,
+  OperatorProfileUpdateInputSchema,
   OperatorReplyInputSchema,
   SafeNotificationDispatchSchema,
   UpdateConversationStatusInputSchema,
@@ -39,10 +41,12 @@ import {
   listAdminConversations,
   listConversationMessages,
   listProjects,
+  listVisitorContacts,
   listOperatorPushSubscriptions,
   rotateOperatorSession,
   revokeOperatorPushSubscription,
   upsertOperatorPushSubscription,
+  updateOperatorDisplayName,
   updateConversationStatus,
   updateOperatorSessionActivity
 } from "../services/chat-service.js";
@@ -299,6 +303,42 @@ export async function registerAdminRoutes(
 
     return {
       conversations: await listAdminConversations(context.pool, query)
+    };
+  });
+
+  app.get("/v1/admin/contacts", async (request, reply) => {
+    await requireAdminSession(request, reply, context);
+    const query = AdminContactListQuerySchema.parse(request.query ?? {});
+
+    return {
+      contacts: await listVisitorContacts(context.pool, query)
+    };
+  });
+
+  app.post("/v1/admin/profile", async (request, reply) => {
+    const session = await requireAdminSession(request, reply, context, {
+      requireCsrf: true
+    });
+    const payload = OperatorProfileUpdateInputSchema.parse(request.body ?? {});
+    const operator = await updateOperatorDisplayName(context.pool, {
+      operatorId: session.user.id,
+      displayName: payload.displayName
+    });
+
+    assert(operator, 404, "Operator not found");
+
+    await insertAuditLog(context.pool, {
+      operatorId: session.user.id,
+      action: "operator.profile.update",
+      entityType: "operator",
+      entityId: String(session.user.id),
+      payload: {
+        displayName: operator.displayName
+      }
+    });
+
+    return {
+      operator
     };
   });
 

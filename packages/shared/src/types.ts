@@ -1,11 +1,13 @@
 import type { z } from "zod";
 
 import type {
+  AdminContactListQuerySchema,
   AdminConversationListQuerySchema,
   ConversationStatusSchema,
   EnsureConversationInputSchema,
   InternalNoteInputSchema,
   OperatorLoginInputSchema,
+  OperatorProfileUpdateInputSchema,
   OperatorReplyInputSchema,
   PublicProjectConfigSchema,
   SafeNotificationDispatchSchema,
@@ -25,10 +27,12 @@ export type OperatorReplyInput = z.infer<typeof OperatorReplyInputSchema>;
 export type InternalNoteInput = z.infer<typeof InternalNoteInputSchema>;
 export type ConversationStatus = z.infer<typeof ConversationStatusSchema>;
 export type AdminConversationListQuery = z.infer<typeof AdminConversationListQuerySchema>;
+export type AdminContactListQuery = z.infer<typeof AdminContactListQuerySchema>;
 export type SafeNotificationDispatchInput = z.infer<typeof SafeNotificationDispatchSchema>;
 export type WebPushSubscriptionInput = z.infer<typeof WebPushSubscriptionInputSchema>;
 export type WebPushSubscriptionRevokeInput = z.infer<typeof WebPushSubscriptionRevokeInputSchema>;
 export type WidgetSdkConfig = z.infer<typeof WidgetSdkConfigSchema>;
+export type OperatorProfileUpdateInput = z.infer<typeof OperatorProfileUpdateInputSchema>;
 
 export interface ChatMessage {
   id: number;
@@ -88,6 +92,18 @@ export interface OperatorPushSubscriptionSummary {
   createdAt: string;
   lastSeenAt: string;
   lastNotifiedAt: string | null;
+}
+
+export interface VisitorContactSummary {
+  id: number;
+  projectKey: string;
+  projectDisplayName: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  lastConversationId: number | null;
 }
 
 export interface WidgetBootstrapPayload {

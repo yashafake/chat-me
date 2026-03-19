@@ -30,8 +30,8 @@ async function main() {
           initialGreeting: "Здравствуйте. Подскажите, с чем помочь?",
           privacyUrl: "https://example.com/privacy",
           collectName: true,
-          collectEmail: false,
-          collectPhone: false
+          collectEmail: true,
+          collectPhone: true
         },
         themeConfig: {
           accentColor: "#2dd4bf",

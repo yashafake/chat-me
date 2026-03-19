@@ -294,12 +294,12 @@ export function OperatorPwaControls() {
   }
 
   return (
-    <div className="rounded-[24px] border border-white/10 bg-white/5 p-4">
-      <div className="text-xs uppercase tracking-[0.22em] text-slate-400">PWA / Push</div>
-      <div className="mt-3 text-sm font-medium text-white">
+    <div className="rounded-[28px] border border-slate-200 bg-slate-50/90 p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+      <div className="text-xs uppercase tracking-[0.22em] text-slate-500">PWA / Push</div>
+      <div className="mt-3 text-sm font-medium text-slate-950">
         {standalone ? "Админка открыта как приложение" : "Установите админку как приложение"}
       </div>
-      <p className="mt-2 text-sm leading-6 text-slate-300">
+      <p className="mt-2 text-sm leading-6 text-slate-500">
         {isIosDevice() && !standalone
           ? "На iPhone: Safari -> Поделиться -> На экран Домой. Потом откройте иконку и включите push."
           : "Push приходит только как safe alert: без текста сообщения и без персональных данных."}
@@ -310,7 +310,7 @@ export function OperatorPwaControls() {
           <button
             type="button"
             onClick={() => void handleInstall()}
-            className="rounded-full border border-aurora/30 px-3 py-2 text-xs text-aurora transition hover:bg-aurora/10"
+            className="rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-900 transition hover:bg-sky-100"
           >
             Установить PWA
           </button>
@@ -321,7 +321,7 @@ export function OperatorPwaControls() {
             type="button"
             onClick={() => void handleDisablePush()}
             disabled={busy}
-            className="rounded-full border border-red-500/25 px-3 py-2 text-xs text-red-100 transition hover:bg-red-500/10 disabled:opacity-60"
+            className="rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800 transition hover:bg-rose-100 disabled:opacity-60"
           >
             Отключить push на этом устройстве
           </button>
@@ -332,42 +332,42 @@ export function OperatorPwaControls() {
             type="button"
             onClick={() => void handleEnablePush()}
             disabled={busy || !pushAvailable || permission === "denied"}
-            className="rounded-full border border-cyan-400/30 px-3 py-2 text-xs text-cyan-100 transition hover:bg-cyan-400/10 disabled:opacity-60"
+            className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-900 transition hover:bg-emerald-100 disabled:opacity-60"
           >
             Включить push
           </button>
         ) : null}
       </div>
 
-      <dl className="mt-4 grid gap-2 text-xs text-slate-400">
+      <dl className="mt-4 grid gap-2 text-xs text-slate-500">
         <div className="flex items-center justify-between gap-3">
           <dt>Статус сервера</dt>
-          <dd className="text-slate-200">{enabled ? "push включен" : "push не настроен"}</dd>
+          <dd className="text-slate-900">{enabled ? "push включен" : "push не настроен"}</dd>
         </div>
         <div className="flex items-center justify-between gap-3">
           <dt>Разрешение браузера</dt>
-          <dd className="text-slate-200">{permission}</dd>
+          <dd className="text-slate-900">{permission}</dd>
         </div>
         <div className="flex items-center justify-between gap-3">
           <dt>Активных устройств</dt>
-          <dd className="text-slate-200">{subscriptions.length}</dd>
+          <dd className="text-slate-900">{subscriptions.length}</dd>
         </div>
         <div className="flex items-center justify-between gap-3">
           <dt>Последний safe alert</dt>
-          <dd className="text-right text-slate-200">
+          <dd className="text-right text-slate-900">
             {formatShortDate(currentSubscription?.lastNotifiedAt || subscriptions[0]?.lastNotifiedAt || null)}
           </dd>
         </div>
       </dl>
 
       {currentSubscription ? (
-        <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3 text-xs text-slate-300">
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs text-slate-600">
           Текущее устройство: {currentSubscription.deviceLabel || "подписка активна"}
         </div>
       ) : null}
 
       {error ? (
-        <div className="mt-3 rounded-2xl border border-red-500/25 bg-red-500/10 px-3 py-3 text-xs text-red-100">
+        <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-xs text-rose-700">
           {error}
         </div>
       ) : null}

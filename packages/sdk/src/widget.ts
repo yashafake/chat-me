@@ -23,6 +23,8 @@ interface WidgetState {
   bootstrapped: boolean;
   loading: boolean;
   sending: boolean;
+  leadSaving: boolean;
+  leadCaptured: boolean;
   error: string;
   connected: boolean;
   fallbackPolling: boolean;
@@ -118,6 +120,106 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function hasText(value: string | undefined): boolean {
+  return Boolean(value?.trim());
+}
+
+function isValidEmail(value: string | undefined): boolean {
+  if (!hasText(value)) {
+    return true;
+  }
+
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value!.trim());
+}
+
+function getLeadContactValue(visitor: ChatWidgetVisitorFields): string {
+  return visitor.email?.trim() || visitor.phone?.trim() || "";
+}
+
+function applyLeadContactValue(visitor: ChatWidgetVisitorFields, value: string): void {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    visitor.email = undefined;
+    visitor.phone = undefined;
+    return;
+  }
+
+  if (trimmed.includes("@")) {
+    visitor.email = trimmed.toLowerCase();
+    visitor.phone = undefined;
+    return;
+  }
+
+  visitor.phone = trimmed;
+  visitor.email = undefined;
+}
+
+function requiresLeadCapture(project: PublicProjectConfig | null): boolean {
+  return Boolean(
+    project?.widget.collectName || project?.widget.collectEmail || project?.widget.collectPhone
+  );
+}
+
+function hasRequiredLeadDetails(
+  project: PublicProjectConfig | null,
+  visitor: ChatWidgetVisitorFields
+): boolean {
+  const collectName = project?.widget.collectName ?? false;
+  const collectEmail = project?.widget.collectEmail ?? false;
+  const collectPhone = project?.widget.collectPhone ?? false;
+
+  if (collectName && !hasText(visitor.name)) {
+    return false;
+  }
+
+  if (collectEmail && collectPhone) {
+    return hasText(visitor.email) || hasText(visitor.phone);
+  }
+
+  if (collectEmail) {
+    return hasText(visitor.email);
+  }
+
+  if (collectPhone) {
+    return hasText(visitor.phone);
+  }
+
+  return true;
+}
+
+function validateLeadDetails(
+  strings: LocaleStrings,
+  project: PublicProjectConfig | null,
+  visitor: ChatWidgetVisitorFields
+): string {
+  const collectName = project?.widget.collectName ?? false;
+  const collectEmail = project?.widget.collectEmail ?? false;
+  const collectPhone = project?.widget.collectPhone ?? false;
+
+  if (collectName && !hasText(visitor.name)) {
+    return strings.nameRequired;
+  }
+
+  if (!isValidEmail(visitor.email)) {
+    return strings.invalidEmail;
+  }
+
+  if (collectEmail && collectPhone && !hasText(visitor.email) && !hasText(visitor.phone)) {
+    return strings.contactRequired;
+  }
+
+  if (collectEmail && !collectPhone && !hasText(visitor.email)) {
+    return strings.contactRequired;
+  }
+
+  if (collectPhone && !collectEmail && !hasText(visitor.phone)) {
+    return strings.contactRequired;
+  }
+
+  return "";
 }
 
 function createStyle(accentColor: string, radius: number): string {
@@ -226,6 +328,45 @@ function createStyle(accentColor: string, radius: number): string {
       color: var(--chat-me-muted);
       background: rgba(255, 255, 255, 0.02);
     }
+    .chat-me__lead-card {
+      border: 1px solid var(--chat-me-border);
+      border-radius: calc(var(--chat-me-radius) - 2px);
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      display: grid;
+      gap: 10px;
+    }
+    .chat-me__lead-card.is-saved {
+      background: color-mix(in srgb, var(--chat-me-accent) 18%, rgba(255, 255, 255, 0.05));
+    }
+    .chat-me__lead-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .chat-me__lead-text,
+    .chat-me__lead-success {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--chat-me-muted);
+    }
+    .chat-me__lead-success {
+      color: var(--chat-me-accent-soft);
+      font-weight: 600;
+    }
+    .chat-me__lead-save {
+      justify-self: start;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, var(--chat-me-accent), color-mix(in srgb, var(--chat-me-accent) 46%, white));
+      color: #061018;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .chat-me__lead-save[disabled] {
+      opacity: .6;
+      cursor: not-allowed;
+    }
     .chat-me__bubble {
       max-width: 88%;
       border-radius: calc(var(--chat-me-radius) - 2px);
@@ -257,6 +398,14 @@ function createStyle(accentColor: string, radius: number): string {
       gap: 10px;
       background: rgba(5, 11, 18, 0.56);
     }
+    .chat-me__composer.is-locked {
+      gap: 8px;
+    }
+    .chat-me__composer-note {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--chat-me-muted);
+    }
     .chat-me__fields {
       display: grid;
       gap: 8px;
@@ -283,11 +432,19 @@ function createStyle(accentColor: string, radius: number): string {
       padding: 12px 14px;
       outline: none;
     }
+    .chat-me__textarea[disabled] {
+      opacity: .55;
+      cursor: not-allowed;
+    }
     .chat-me__footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+    }
+    .chat-me__footer-copy {
+      display: grid;
+      gap: 6px;
     }
     .chat-me__privacy {
       color: var(--chat-me-muted);
@@ -352,6 +509,8 @@ export function mountChatWidget(
     bootstrapped: false,
     loading: false,
     sending: false,
+    leadSaving: false,
+    leadCaptured: false,
     error: "",
     connected: false,
     fallbackPolling: false,
@@ -479,6 +638,10 @@ export function mountChatWidget(
       });
       state.project = session.project;
       state.visitorToken = session.visitorToken;
+      state.visitor = {
+        ...state.visitor,
+        ...session.visitor
+      };
       writeVisitorToken(config.projectKey, session.visitorToken);
 
       const conversation = await client.ensureConversation({
@@ -486,6 +649,9 @@ export function mountChatWidget(
       });
       state.conversationId = conversation.conversationId;
       state.messages = mergeMessages([], conversation.messages);
+      state.leadCaptured =
+        !requiresLeadCapture(session.project) ||
+        hasRequiredLeadDetails(session.project, state.visitor);
       state.bootstrapped = true;
       connectStream();
     } catch (error) {
@@ -497,15 +663,77 @@ export function mountChatWidget(
     }
   }
 
+  async function saveLeadCapture() {
+    const effectiveStrings = getStrings(config.locale || state.project?.widget.locale || "ru");
+    const validationError = validateLeadDetails(effectiveStrings, state.project, state.visitor);
+
+    if (validationError) {
+      state.error = validationError;
+      render();
+      return;
+    }
+
+    state.leadSaving = true;
+    state.error = "";
+    render();
+
+    try {
+      const session = await client.initSession({
+        visitorToken: state.visitorToken || undefined,
+        visitor: state.visitor
+      });
+      state.project = session.project;
+      state.visitorToken = session.visitorToken;
+      state.visitor = {
+        ...state.visitor,
+        ...session.visitor
+      };
+      writeVisitorToken(config.projectKey, session.visitorToken);
+
+      if (!state.conversationId) {
+        const conversation = await client.ensureConversation({
+          visitorToken: state.visitorToken
+        });
+        state.conversationId = conversation.conversationId;
+        state.messages = mergeMessages(state.messages, conversation.messages);
+      }
+
+      state.leadCaptured = true;
+
+      if (state.open && state.conversationId && !eventSource) {
+        connectStream();
+      }
+    } catch (error) {
+      state.error = error instanceof Error ? error.message : effectiveStrings.error;
+    } finally {
+      state.leadSaving = false;
+      render();
+      scrollMessagesToBottom();
+    }
+  }
+
   async function sendMessage() {
     const body = clamp(state.draft);
+    const effectiveStrings = getStrings(config.locale || state.project?.widget.locale || "ru");
 
     if (!body || state.sending) {
       return;
     }
 
+    if (requiresLeadCapture(state.project) && !state.leadCaptured) {
+      state.error = validateLeadDetails(effectiveStrings, state.project, state.visitor);
+      render();
+      return;
+    }
+
     if (!state.bootstrapped) {
       await bootstrap();
+    }
+
+    if (requiresLeadCapture(state.project) && !state.leadCaptured) {
+      state.error = validateLeadDetails(effectiveStrings, state.project, state.visitor);
+      render();
+      return;
     }
 
     if (!state.conversationId) {
@@ -552,9 +780,9 @@ export function mountChatWidget(
     const closeButton = mountRoot.querySelector<HTMLButtonElement>("[data-role='close']");
     const textarea = mountRoot.querySelector<HTMLTextAreaElement>(".chat-me__textarea");
     const sendButton = mountRoot.querySelector<HTMLButtonElement>(".chat-me__send");
+    const leadSaveButton = mountRoot.querySelector<HTMLButtonElement>(".chat-me__lead-save");
     const nameInput = mountRoot.querySelector<HTMLInputElement>("input[name='visitor-name']");
-    const emailInput = mountRoot.querySelector<HTMLInputElement>("input[name='visitor-email']");
-    const phoneInput = mountRoot.querySelector<HTMLInputElement>("input[name='visitor-phone']");
+    const contactInput = mountRoot.querySelector<HTMLInputElement>("input[name='visitor-contact']");
 
     toggleButton?.addEventListener("click", () => {
       state.open = !state.open;
@@ -582,15 +810,18 @@ export function mountChatWidget(
       event.preventDefault();
       void sendMessage();
     });
+    leadSaveButton?.addEventListener("click", (event) => {
+      event.preventDefault();
+      void saveLeadCapture();
+    });
 
     nameInput?.addEventListener("input", (event) => {
       state.visitor.name = (event.target as HTMLInputElement).value;
+      state.error = "";
     });
-    emailInput?.addEventListener("input", (event) => {
-      state.visitor.email = (event.target as HTMLInputElement).value;
-    });
-    phoneInput?.addEventListener("input", (event) => {
-      state.visitor.phone = (event.target as HTMLInputElement).value;
+    contactInput?.addEventListener("input", (event) => {
+      applyLeadContactValue(state.visitor, (event.target as HTMLInputElement).value);
+      state.error = "";
     });
   }
 
@@ -607,6 +838,40 @@ export function mountChatWidget(
     const collectName = state.project?.widget.collectName ?? false;
     const collectEmail = state.project?.widget.collectEmail ?? false;
     const collectPhone = state.project?.widget.collectPhone ?? false;
+    const leadRequired = requiresLeadCapture(state.project);
+    const composerLocked = leadRequired && !state.leadCaptured;
+    const contactValue = getLeadContactValue(state.visitor);
+    const leadSummary = [state.visitor.name, contactValue]
+      .filter((value): value is string => hasText(value))
+      .map((value) => escapeHtml(value))
+      .join(" · ");
+    const contactPlaceholder =
+      collectEmail && !collectPhone
+        ? effectiveStrings.emailLabel
+        : collectPhone && !collectEmail
+          ? effectiveStrings.phoneLabel
+          : effectiveStrings.contactLabel;
+    const leadBlock = leadRequired
+      ? state.leadCaptured
+        ? `
+            <div class="chat-me__lead-card is-saved">
+              <div class="chat-me__lead-title">${escapeHtml(effectiveStrings.leadTitle)}</div>
+              ${leadSummary ? `<div class="chat-me__lead-text">${leadSummary}</div>` : ""}
+              <div class="chat-me__lead-success">${escapeHtml(effectiveStrings.leadSaved)}</div>
+            </div>
+          `
+        : `
+            <div class="chat-me__lead-card">
+              <div class="chat-me__lead-title">${escapeHtml(effectiveStrings.leadTitle)}</div>
+              <div class="chat-me__lead-text">${escapeHtml(effectiveStrings.leadHint)}</div>
+              <div class="chat-me__fields">
+                ${collectName ? `<input name="visitor-name" placeholder="${effectiveStrings.nameLabel}" value="${escapeHtml(state.visitor.name || "")}" />` : ""}
+                ${collectEmail || collectPhone ? `<input name="visitor-contact" placeholder="${escapeHtml(contactPlaceholder)}" value="${escapeHtml(contactValue)}" />` : ""}
+              </div>
+              <button class="chat-me__lead-save" ${state.leadSaving ? "disabled" : ""}>${state.leadSaving ? effectiveStrings.connecting : effectiveStrings.leadSave}</button>
+            </div>
+          `
+      : "";
 
     mountRoot.innerHTML = `
       <style>${createStyle(theme.accentColor || "#2dd4bf", theme.borderRadius || 20)}</style>
@@ -630,6 +895,7 @@ export function mountChatWidget(
               </div>
             </div>
             <div class="chat-me__body">
+              ${leadBlock}
               ${
                 state.messages.length === 0
                   ? `<div class="chat-me__empty">${effectiveStrings.empty}</div>`
@@ -647,29 +913,26 @@ export function mountChatWidget(
                       .join("")
               }
             </div>
-            <div class="chat-me__composer">
+            <div class="chat-me__composer ${composerLocked ? "is-locked" : ""}">
               ${
-                collectName || collectEmail || collectPhone
-                  ? `
-                    <div class="chat-me__fields">
-                      ${collectName ? `<input name="visitor-name" placeholder="${effectiveStrings.nameLabel}" value="${escapeHtml(state.visitor.name || "")}" />` : ""}
-                      ${collectEmail ? `<input name="visitor-email" type="email" placeholder="${effectiveStrings.emailLabel}" value="${escapeHtml(state.visitor.email || "")}" />` : ""}
-                      ${collectPhone ? `<input name="visitor-phone" type="tel" placeholder="${effectiveStrings.phoneLabel}" value="${escapeHtml(state.visitor.phone || "")}" />` : ""}
-                    </div>
-                  `
-                  : ""
+                composerLocked
+                  ? `<div class="chat-me__composer-note">${escapeHtml(effectiveStrings.leadLockedPlaceholder)}</div>`
+                  : `<textarea class="chat-me__textarea" placeholder="${effectiveStrings.placeholder}">${escapeHtml(state.draft)}</textarea>`
               }
-              <textarea class="chat-me__textarea" placeholder="${effectiveStrings.placeholder}">${escapeHtml(state.draft)}</textarea>
               <div class="chat-me__footer">
-                ${
-                  privacyUrl
-                    ? `<a class="chat-me__privacy" href="${escapeHtml(privacyUrl)}" target="_blank" rel="noreferrer">${effectiveStrings.privacy}</a>`
-                    : `<span class="chat-me__privacy"></span>`
-                }
-                <div>
+                <div class="chat-me__footer-copy">
+                  ${
+                    privacyUrl
+                      ? `<a class="chat-me__privacy" href="${escapeHtml(privacyUrl)}" target="_blank" rel="noreferrer">${effectiveStrings.privacy}</a>`
+                      : `<span class="chat-me__privacy"></span>`
+                  }
                   ${state.error ? `<div class="chat-me__error">${escapeHtml(state.error)}</div>` : ""}
                 </div>
-                <button class="chat-me__send" ${state.sending ? "disabled" : ""}>${state.sending ? effectiveStrings.connecting : effectiveStrings.send}</button>
+                ${
+                  composerLocked
+                    ? ""
+                    : `<button class="chat-me__send" ${state.sending ? "disabled" : ""}>${state.sending ? effectiveStrings.connecting : effectiveStrings.send}</button>`
+                }
               </div>
             </div>
           </div>
@@ -694,6 +957,13 @@ export function mountChatWidget(
       .then((session) => {
         state.project = session.project;
         state.visitorToken = session.visitorToken;
+        state.visitor = {
+          ...state.visitor,
+          ...session.visitor
+        };
+        state.leadCaptured =
+          !requiresLeadCapture(session.project) ||
+          hasRequiredLeadDetails(session.project, state.visitor);
         writeVisitorToken(config.projectKey, session.visitorToken);
         render();
       })
