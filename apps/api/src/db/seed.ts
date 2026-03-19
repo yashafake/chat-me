@@ -60,6 +60,28 @@ async function main() {
         }
       },
       {
+        key: "dh22-store",
+        displayName: "DH22 Store",
+        allowedOrigins: parseOrigins(
+          process.env.SEED_DH22_ORIGINS,
+          ["https://dh22.ru", "https://www.dh22.ru", "http://localhost:3000", "http://127.0.0.1:3000"]
+        ),
+        widgetConfig: {
+          locale: "ru",
+          initialGreeting: "Здравствуйте. Напишите вопрос по наличию, размеру, доставке или заказу.",
+          privacyUrl: "https://dh22.ru/privacy-policy",
+          collectName: true,
+          collectEmail: true,
+          collectPhone: true
+        },
+        themeConfig: {
+          accentColor: "#ccff00",
+          position: "bottom-right",
+          borderRadius: 24,
+          buttonLabel: "Написать менеджеру"
+        }
+      },
+      {
         key: "insales-store",
         displayName: "InSales Store",
         allowedOrigins: parseOrigins(process.env.SEED_INSALES_STORE_ORIGINS, defaultOrigins),
