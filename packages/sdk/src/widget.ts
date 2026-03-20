@@ -233,15 +233,15 @@ function launcherIcon(): string {
         d="M4 6.75A2.75 2.75 0 0 1 6.75 4h10.5A2.75 2.75 0 0 1 20 6.75v6.5A2.75 2.75 0 0 1 17.25 16H10l-4.2 3.15c-.72.54-1.8.03-1.8-.87V6.75Z"
         fill="none"
         stroke="currentColor"
-        stroke-width="1.8"
+        stroke-width="2.1"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
       <path
-        d="M8.25 9.5h7.5M8.25 12.5h4.5"
+        d="M8 9.5h8M8 12.5h5"
         fill="none"
         stroke="currentColor"
-        stroke-width="1.8"
+        stroke-width="2.1"
         stroke-linecap="round"
       />
     </svg>
@@ -262,11 +262,52 @@ function closeIcon(): string {
   `;
 }
 
+function parseHexColor(value: string): { r: number; g: number; b: number } | null {
+  const normalized = value.trim().replace(/^#/, "");
+  const full = normalized.length === 3
+    ? normalized.split("").map((chunk) => `${chunk}${chunk}`).join("")
+    : normalized;
+
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) {
+    return null;
+  }
+
+  return {
+    r: parseInt(full.slice(0, 2), 16),
+    g: parseInt(full.slice(2, 4), 16),
+    b: parseInt(full.slice(4, 6), 16)
+  };
+}
+
+function toLinearChannel(channel: number): number {
+  const normalized = channel / 255;
+  return normalized <= 0.04045
+    ? normalized / 12.92
+    : ((normalized + 0.055) / 1.055) ** 2.4;
+}
+
+function resolveOnAccentColor(accentColor: string): string {
+  const rgb = parseHexColor(accentColor);
+  if (!rgb) {
+    return "#061018";
+  }
+
+  const luminance =
+    (0.2126 * toLinearChannel(rgb.r)) +
+    (0.7152 * toLinearChannel(rgb.g)) +
+    (0.0722 * toLinearChannel(rgb.b));
+
+  return luminance < 0.36 ? "#f8fbff" : "#061018";
+}
+
 function createStyle(accentColor: string, radius: number): string {
+  const onAccentColor = resolveOnAccentColor(accentColor);
+
   return `
     :host, .chat-me {
       --chat-me-accent: ${accentColor};
       --chat-me-accent-soft: color-mix(in srgb, ${accentColor} 24%, white);
+      --chat-me-on-accent: ${onAccentColor};
       --chat-me-bg: #0a1320;
       --chat-me-panel: rgba(9, 18, 30, 0.94);
       --chat-me-border: rgba(255, 255, 255, 0.08);
@@ -300,8 +341,8 @@ function createStyle(accentColor: string, radius: number): string {
       gap: 10px;
       border: none;
       border-radius: 999px;
-      background: linear-gradient(135deg, var(--chat-me-accent), color-mix(in srgb, var(--chat-me-accent) 58%, white));
-      color: #061018;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--chat-me-accent) 84%, black), var(--chat-me-accent));
+      color: var(--chat-me-on-accent);
       font-weight: 700;
       padding: 14px 18px;
       min-width: 72px;
@@ -322,8 +363,8 @@ function createStyle(accentColor: string, radius: number): string {
     }
     .chat-me__toggle-icon svg,
     .chat-me__close-icon svg {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       display: block;
     }
     .chat-me.open .chat-me__toggle {
@@ -548,8 +589,8 @@ function createStyle(accentColor: string, radius: number): string {
       border: none;
       border-radius: 999px;
       padding: 11px 16px;
-      background: linear-gradient(135deg, var(--chat-me-accent), color-mix(in srgb, var(--chat-me-accent) 46%, white));
-      color: #061018;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--chat-me-accent) 86%, black), var(--chat-me-accent));
+      color: var(--chat-me-on-accent);
       font-weight: 700;
       cursor: pointer;
     }
@@ -583,9 +624,9 @@ function createStyle(accentColor: string, radius: number): string {
       }
       .chat-me__toggle {
         justify-self: end;
-        width: 58px;
-        height: 58px;
-        min-width: 58px;
+        width: 54px;
+        height: 54px;
+        min-width: 54px;
         padding: 0;
         gap: 0;
         border-radius: 999px;
