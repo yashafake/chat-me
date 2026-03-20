@@ -24,7 +24,7 @@
 
 <script>
   (function () {
-    var CHAT_WIDGET_URL = "https://chat.black8.tech/widget/chat-me-widget.js?v=20260319-insales-iwant-2";
+    var CHAT_WIDGET_URL = "https://chat.black8.tech/widget/chat-me-widget.js?v=20260320-insales-iwant-3";
     var CHAT_API_BASE_URL = "https://chat.black8.tech";
     var CHAT_PROJECT_KEY = "insales-store";
     var TARGET_ID = "insales-chat-me-root";
@@ -479,7 +479,7 @@
     function applyEnhancements(target) {
       var shadowRoot = target.shadowRoot;
       if (!shadowRoot) {
-        return function () {};
+        return null;
       }
 
       var locale = getLocale();
@@ -610,6 +610,37 @@
       };
     }
 
+    function applyEnhancementsWhenReady(target) {
+      var isStopped = false;
+      var cleanup = null;
+      var frameId = 0;
+
+      function attemptAttach() {
+        if (isStopped) {
+          return;
+        }
+
+        cleanup = applyEnhancements(target);
+        if (cleanup) {
+          return;
+        }
+
+        frameId = requestAnimationFrame(attemptAttach);
+      }
+
+      attemptAttach();
+
+      return function () {
+        isStopped = true;
+        if (frameId) {
+          cancelAnimationFrame(frameId);
+        }
+        if (cleanup) {
+          cleanup();
+        }
+      };
+    }
+
     function getTriggerDraft(trigger) {
       if (!trigger) {
         return "";
@@ -677,14 +708,14 @@
             privacyUrl: PRIVACY_URL,
             initialGreeting: copy.initialGreeting,
             theme: {
-              accentColor: "#ffffff",
+              accentColor: "#111111",
               buttonLabel: copy.buttonLabel,
               position: "bottom-right",
               borderRadius: 26
             }
           });
 
-          window.__insalesChatMeCleanupEnhancements__ = applyEnhancements(target);
+          window.__insalesChatMeCleanupEnhancements__ = applyEnhancementsWhenReady(target);
 
           if (window.__insalesChatMeOpenRequested__) {
             window.__insalesChatMeController__.open(window.__insalesChatMeOpenDraft__ || "");

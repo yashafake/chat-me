@@ -370,6 +370,9 @@ function createStyle(accentColor: string, radius: number): string {
     .chat-me.open .chat-me__toggle {
       display: none;
     }
+    .chat-me.hide-toggle .chat-me__toggle {
+      display: none !important;
+    }
     .chat-me__panel {
       overflow: hidden;
       border-radius: calc(var(--chat-me-radius) + 8px);
@@ -1027,6 +1030,19 @@ export function mountChatWidget(
     });
   }
 
+  function shouldHideWidgetToggle(): boolean {
+    if (typeof document === "undefined") {
+      return false;
+    }
+
+    const externalTriggers = document.querySelectorAll("[data-chat-me-trigger], a[href='#shop-chat']");
+    if (!externalTriggers.length) {
+      return false;
+    }
+
+    return Array.from(externalTriggers).some((trigger) => !target.contains(trigger));
+  }
+
   function render() {
     const theme = mergedTheme();
     const effectiveStrings = getStrings(
@@ -1055,6 +1071,7 @@ export function mountChatWidget(
           : effectiveStrings.contactLabel;
     const shouldRenderPanelContent =
       state.open || state.loading || state.bootstrapped || Boolean(state.error);
+    const hideWidgetToggle = shouldHideWidgetToggle();
     const leadBlock = leadRequired
       ? state.leadCaptured
         ? `
@@ -1079,7 +1096,7 @@ export function mountChatWidget(
 
     mountRoot.innerHTML = `
       <style>${createStyle(theme.accentColor || "#2dd4bf", theme.borderRadius || 20)}</style>
-      <div class="chat-me ${theme.position === "bottom-left" ? "left" : "right"} ${state.open ? "open" : ""}">
+      <div class="chat-me ${theme.position === "bottom-left" ? "left" : "right"} ${state.open ? "open" : ""} ${hideWidgetToggle ? "hide-toggle" : ""}">
         <div class="chat-me__shell">
           <div class="chat-me__panel">
             ${
@@ -1155,14 +1172,20 @@ export function mountChatWidget(
                 : ""
             }
           </div>
-          <button
-            class="chat-me__toggle"
-            type="button"
-            aria-label="${escapeHtml(theme.buttonLabel || effectiveStrings.open)}"
-          >
-            <span class="chat-me__toggle-icon">${launcherIcon()}</span>
-            <span class="chat-me__toggle-label">${escapeHtml(theme.buttonLabel || effectiveStrings.open)}</span>
-          </button>
+          ${
+            hideWidgetToggle
+              ? ""
+              : `
+                  <button
+                    class="chat-me__toggle"
+                    type="button"
+                    aria-label="${escapeHtml(theme.buttonLabel || effectiveStrings.open)}"
+                  >
+                    <span class="chat-me__toggle-icon">${launcherIcon()}</span>
+                    <span class="chat-me__toggle-label">${escapeHtml(theme.buttonLabel || effectiveStrings.open)}</span>
+                  </button>
+                `
+          }
         </div>
       </div>
     `;
