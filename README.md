@@ -199,20 +199,28 @@ export function SupportChat() {
 
 ## Connect from InSales / Liquid
 
-See [InSales example](/Users/yakovradchenko/Documents/Projects/chat-me/examples/insales-liquid/chat-me-widget.liquid).
+See [optimized InSales example](/Users/yakovradchenko/Documents/Projects/chat-me/examples/insales-liquid/chat-me-widget-optimized.liquid).
+For the full branded IWANT variant, use [iwant snippet](/Users/yakovradchenko/Documents/Projects/chat-me/examples/insales-liquid/iwant-chat-widget.liquid).
 
-Minimal snippet:
+Minimal optimized pattern:
 
 ```html
-<script src="https://chat.black8.tech/widget/chat-me-widget.js" defer></script>
 <script>
-  window.addEventListener("load", function () {
-    window.ChatMeWidget.init({
-      projectKey: "insales-store",
-      apiBaseUrl: "https://chat.black8.tech",
-      locale: "ru"
-    });
-  });
+  // Load + mount only after first user interaction.
+  const mount = () => {
+    const script = document.createElement("script");
+    script.src = "https://chat.black8.tech/widget/chat-me-widget.js";
+    script.async = true;
+    script.onload = () => {
+      window.ChatMeWidget?.init({
+        projectKey: "insales-store",
+        apiBaseUrl: "https://chat.black8.tech",
+        locale: "ru"
+      });
+    };
+    document.head.appendChild(script);
+  };
+  window.addEventListener("pointerdown", mount, { once: true, passive: true, capture: true });
 </script>
 ```
 

@@ -1,0 +1,259 @@
+{%- comment -%}
+  Optimized InSales / Liquid integration for chat-me.
+
+  Why this version:
+  - No eager widget load on page start (better Lighthouse score).
+  - Widget mounts only on user intent:
+    - click on trigger (`data-chat-me-trigger` or `href="#shop-chat"`),
+    - or first interaction if triggers are not used.
+
+  How to use:
+  1. Include this snippet once in the theme.
+  2. Optional: add trigger links/buttons with `href="#shop-chat"` or `data-chat-me-trigger`.
+  3. Optional: pass message draft via `data-chat-me-draft="..."`.
+{%- endcomment -%}
+
+<div id="insales-chat-me-root" aria-hidden="true"></div>
+
+<script>
+  (function () {
+    var CHAT_WIDGET_URL = "https://chat.black8.tech/widget/chat-me-widget.js?v=20260320-liquid-opt-1";
+    var CHAT_API_BASE_URL = "https://chat.black8.tech";
+    var CHAT_PROJECT_KEY = "insales-store";
+    var TARGET_ID = "insales-chat-me-root";
+
+    window.__insalesChatMeController__ = window.__insalesChatMeController__ || null;
+    window.__insalesChatMeScriptPromise__ = window.__insalesChatMeScriptPromise__ || null;
+    window.__insalesChatMeOpenRequested__ = window.__insalesChatMeOpenRequested__ || false;
+    window.__insalesChatMeOpenDraft__ = window.__insalesChatMeOpenDraft__ || "";
+
+    var widgetMountPromise = null;
+    var warmupBound = false;
+
+    function getLocale() {
+      var htmlLang = (document.documentElement.getAttribute("lang") || "").toLowerCase();
+      return htmlLang.indexOf("en") === 0 ? "en" : "ru";
+    }
+
+    function getButtonLabel(locale) {
+      return locale === "en" ? "Chat" : "Чат";
+    }
+
+    function loadWidgetScript() {
+      if (window.ChatMeWidget) {
+        return Promise.resolve();
+      }
+
+      if (window.__insalesChatMeScriptPromise__) {
+        return window.__insalesChatMeScriptPromise__;
+      }
+
+      window.__insalesChatMeScriptPromise__ = new Promise(function (resolve, reject) {
+        var existing = document.querySelector('script[data-chat-me-widget="insales-optimized"]');
+        if (existing) {
+          existing.addEventListener("load", function () { resolve(); }, { once: true });
+          existing.addEventListener("error", function () { reject(new Error("chat-me widget failed to load")); }, { once: true });
+          return;
+        }
+
+        var script = document.createElement("script");
+        script.src = CHAT_WIDGET_URL;
+        script.async = true;
+        script.defer = true;
+        script.dataset.chatMeWidget = "insales-optimized";
+        script.onload = function () { resolve(); };
+        script.onerror = function () {
+          window.__insalesChatMeScriptPromise__ = null;
+          script.remove();
+          reject(new Error("chat-me widget failed to load"));
+        };
+        document.head.appendChild(script);
+      });
+
+      return window.__insalesChatMeScriptPromise__;
+    }
+
+    function ensureWidgetMounted() {
+      if (window.__insalesChatMeController__) {
+        return Promise.resolve(window.__insalesChatMeController__);
+      }
+
+      if (widgetMountPromise) {
+        return widgetMountPromise;
+      }
+
+      widgetMountPromise = loadWidgetScript()
+        .then(function () {
+          if (!window.ChatMeWidget) {
+            return null;
+          }
+
+          var target = document.getElementById(TARGET_ID);
+          if (!target) {
+            return null;
+          }
+
+          window.__insalesChatMeController__ = window.ChatMeWidget.init({
+            target: target,
+            projectKey: CHAT_PROJECT_KEY,
+            apiBaseUrl: CHAT_API_BASE_URL,
+            locale: getLocale(),
+            theme: {
+              accentColor: "#111111",
+              buttonLabel: getButtonLabel(getLocale()),
+              position: "bottom-right",
+              borderRadius: 24
+            }
+          });
+
+          if (window.__insalesChatMeOpenRequested__) {
+            window.__insalesChatMeController__.open(window.__insalesChatMeOpenDraft__ || "");
+            window.__insalesChatMeOpenRequested__ = false;
+            window.__insalesChatMeOpenDraft__ = "";
+          }
+
+          return window.__insalesChatMeController__;
+        })
+        .catch(function () {
+          return null;
+        })
+        .finally(function () {
+          widgetMountPromise = null;
+        });
+
+      return widgetMountPromise;
+    }
+
+    function getTriggerDraft(trigger) {
+      if (!trigger) {
+        return "";
+      }
+
+      var explicitDraft = trigger.getAttribute("data-chat-me-draft");
+      return explicitDraft ? explicitDraft.trim() : "";
+    }
+
+    function openChat(trigger) {
+      var draft = getTriggerDraft(trigger);
+      window.__insalesChatMeOpenRequested__ = true;
+      window.__insalesChatMeOpenDraft__ = draft;
+
+      ensureWidgetMounted()
+        .then(function () {
+          if (!window.__insalesChatMeController__) {
+            return;
+          }
+
+          window.__insalesChatMeController__.open(draft);
+          window.__insalesChatMeOpenRequested__ = false;
+          window.__insalesChatMeOpenDraft__ = "";
+        })
+        .catch(function () {
+          return;
+        });
+    }
+
+    function bindTriggers() {
+      var triggers = document.querySelectorAll("[data-chat-me-trigger], a[href='#shop-chat']");
+      Array.prototype.forEach.call(triggers, function (trigger) {
+        if (trigger.dataset.chatMeBound === "true") {
+          return;
+        }
+
+        trigger.dataset.chatMeBound = "true";
+        trigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          openChat(trigger);
+        });
+      });
+    }
+
+    function scheduleWarmupMount() {
+      if (warmupBound) {
+        return;
+      }
+      warmupBound = true;
+
+      var warmupTriggered = false;
+      var triggerSelector = "[data-chat-me-trigger], a[href='#shop-chat']";
+      var triggers = document.querySelectorAll(triggerSelector);
+
+      function triggerWarmup() {
+        if (warmupTriggered) {
+          return;
+        }
+
+        warmupTriggered = true;
+        cleanup();
+        ensureWidgetMounted().catch(function () {
+          return;
+        });
+      }
+
+      function cleanup() {
+        Array.prototype.forEach.call(triggers, function (trigger) {
+          trigger.removeEventListener("pointerenter", triggerWarmup, true);
+          trigger.removeEventListener("touchstart", triggerWarmup, true);
+          trigger.removeEventListener("focus", triggerWarmup, true);
+        });
+
+        window.removeEventListener("pointerdown", triggerWarmup, true);
+        window.removeEventListener("touchstart", triggerWarmup, true);
+        window.removeEventListener("keydown", triggerWarmup, true);
+        window.removeEventListener("scroll", triggerWarmup, true);
+      }
+
+      if (triggers.length) {
+        Array.prototype.forEach.call(triggers, function (trigger) {
+          trigger.addEventListener("pointerenter", triggerWarmup, {
+            once: true,
+            passive: true,
+            capture: true
+          });
+          trigger.addEventListener("touchstart", triggerWarmup, {
+            once: true,
+            passive: true,
+            capture: true
+          });
+          trigger.addEventListener("focus", triggerWarmup, {
+            once: true,
+            capture: true
+          });
+        });
+
+        return;
+      }
+
+      window.addEventListener("pointerdown", triggerWarmup, {
+        once: true,
+        passive: true,
+        capture: true
+      });
+      window.addEventListener("touchstart", triggerWarmup, {
+        once: true,
+        passive: true,
+        capture: true
+      });
+      window.addEventListener("keydown", triggerWarmup, {
+        once: true,
+        capture: true
+      });
+      window.addEventListener("scroll", triggerWarmup, {
+        once: true,
+        passive: true,
+        capture: true
+      });
+    }
+
+    function start() {
+      bindTriggers();
+      scheduleWarmupMount();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", start, { once: true });
+    } else {
+      start();
+    }
+  })();
+</script>

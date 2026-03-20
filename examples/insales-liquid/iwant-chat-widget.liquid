@@ -34,6 +34,8 @@
     window.__insalesChatMeScriptPromise__ = window.__insalesChatMeScriptPromise__ || null;
     window.__insalesChatMeOpenRequested__ = window.__insalesChatMeOpenRequested__ || false;
     window.__insalesChatMeOpenDraft__ = window.__insalesChatMeOpenDraft__ || "";
+    var widgetMountPromise = null;
+    var warmupBound = false;
 
     var widgetCopy = {
       ru: {
@@ -654,11 +656,19 @@
       var draft = getTriggerDraft(trigger);
       window.__insalesChatMeOpenRequested__ = true;
       window.__insalesChatMeOpenDraft__ = draft;
-      if (window.__insalesChatMeController__) {
-        window.__insalesChatMeController__.open(draft);
-        window.__insalesChatMeOpenRequested__ = false;
-        window.__insalesChatMeOpenDraft__ = "";
-      }
+      ensureWidgetMounted()
+        .then(function () {
+          if (!window.__insalesChatMeController__) {
+            return;
+          }
+
+          window.__insalesChatMeController__.open(draft);
+          window.__insalesChatMeOpenRequested__ = false;
+          window.__insalesChatMeOpenDraft__ = "";
+        })
+        .catch(function () {
+          return;
+        });
     }
 
     function bindTriggers() {
@@ -676,16 +686,24 @@
       });
     }
 
-    function mountWidget() {
-      loadWidgetScript()
+    function ensureWidgetMounted() {
+      if (window.__insalesChatMeController__) {
+        return Promise.resolve(window.__insalesChatMeController__);
+      }
+
+      if (widgetMountPromise) {
+        return widgetMountPromise;
+      }
+
+      widgetMountPromise = loadWidgetScript()
         .then(function () {
           if (!window.ChatMeWidget) {
-            return;
+            return null;
           }
 
           var target = document.getElementById(TARGET_ID);
           if (!target) {
-            return;
+            return null;
           }
 
           var copy = widgetCopy[getLocale()] || widgetCopy.ru;
@@ -722,15 +740,70 @@
             window.__insalesChatMeOpenRequested__ = false;
             window.__insalesChatMeOpenDraft__ = "";
           }
+
+          return window.__insalesChatMeController__;
         })
         .catch(function () {
+          return null;
+        })
+        .finally(function () {
+          widgetMountPromise = null;
+        });
+
+      return widgetMountPromise;
+    }
+
+    function scheduleWarmupMount() {
+      if (warmupBound) {
+        return;
+      }
+      warmupBound = true;
+
+      var warmupTriggered = false;
+      var triggerSelector = "[data-chat-me-trigger], a[href='#shop-chat']";
+      var triggers = document.querySelectorAll(triggerSelector);
+
+      function cleanup() {
+        Array.prototype.forEach.call(triggers, function (trigger) {
+          trigger.removeEventListener("pointerenter", triggerWarmup, true);
+          trigger.removeEventListener("focus", triggerWarmup, true);
+          trigger.removeEventListener("touchstart", triggerWarmup, true);
+        });
+      }
+
+      function triggerWarmup() {
+        if (warmupTriggered) {
+          return;
+        }
+
+        warmupTriggered = true;
+        cleanup();
+        loadWidgetScript().catch(function () {
           return;
         });
+      }
+
+      Array.prototype.forEach.call(triggers, function (trigger) {
+        trigger.addEventListener("pointerenter", triggerWarmup, {
+          once: true,
+          passive: true,
+          capture: true
+        });
+        trigger.addEventListener("touchstart", triggerWarmup, {
+          once: true,
+          passive: true,
+          capture: true
+        });
+        trigger.addEventListener("focus", triggerWarmup, {
+          once: true,
+          capture: true
+        });
+      });
     }
 
     function start() {
       bindTriggers();
-      mountWidget();
+      scheduleWarmupMount();
     }
 
     if (document.readyState === "loading") {
