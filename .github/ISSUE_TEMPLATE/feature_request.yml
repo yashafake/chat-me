@@ -1,0 +1,49 @@
+name: Feature Request
+description: Suggest an improvement for chat-me
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing an idea. Clear use-cases help us prioritize.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Use-case
+      description: What problem are you trying to solve?
+      placeholder: As a ..., I want ..., so that ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your ideal behavior.
+      placeholder: Describe the preferred implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Other approaches you considered.
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Scope / Impact
+      description: Who is affected and how often?
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues before submitting this request.
+          required: true
