@@ -7,7 +7,7 @@ export function StoreChatSupport() {
     <ChatWidget
       config={{
         projectKey: "etern8-store",
-        apiBaseUrl: process.env.NEXT_PUBLIC_CHAT_ME_API || "https://chat.black8.tech",
+        apiBaseUrl: process.env.NEXT_PUBLIC_CHAT_ME_API || "http://localhost:4100",
         locale: "ru",
         theme: {
           accentColor: "#ff7a59",

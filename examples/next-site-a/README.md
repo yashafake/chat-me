@@ -2,12 +2,12 @@
 
 Target: main marketing site (`projectKey: etern8-main`)
 
-Add [`ChatSupport.tsx`](/Users/yakovradchenko/Documents/Projects/chat-me/examples/next-site-a/ChatSupport.tsx) to your Next.js app and render it once in the root layout or a persistent client shell.
+Add [`ChatSupport.tsx`](./ChatSupport.tsx) to your Next.js app and render it once in the root layout or a persistent client shell.
 
 Recommended env on the site:
 
 ```bash
-NEXT_PUBLIC_CHAT_ME_API=https://chat.black8.tech
+NEXT_PUBLIC_CHAT_ME_API=https://chat.example.com
 ```
 
 Then mount:

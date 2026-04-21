@@ -5,7 +5,16 @@ build
 .turbo
 .env
 .env.local
+.env.*
+!.env.example
 .DS_Store
 coverage
 apps/widget/public
 *.log
+.playwright-cli
+output/
+.agent/
+.agents/
+.claude/
+AGENTS.md
+CLAUDE.md
